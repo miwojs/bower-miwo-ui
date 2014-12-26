@@ -1,0 +1,49 @@
+.form-control {
+	&.has-error {
+		border-color: @state-danger-border !important;
+		box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+		color: @state-danger-text;
+	}
+}
+
+.form-group {
+	.help-block.has-error {
+		color: @state-danger-text;
+	}
+	&.input-fill {
+		input {
+			width: 100%;
+		}
+	}
+}
+
+.form-horizontal {
+	.radio, .checkbox {
+		margin-bottom: 15px;
+		padding-top: 0px;
+		label {
+			padding-left: 0px;
+		}
+		.checker {
+			margin-left: -4px;
+		}
+	}
+	.control-label-required {
+		position: absolute;
+		right: 0px;
+		color: @state-danger-text;
+	}
+	.checkbox-inline, .radio-inline {
+		margin-left: -15px;
+	}
+}
+
+.form-inline {
+	.form-group {
+		padding-right: 5px;
+		margin-bottom: 5px;
+		.control-label {
+			display: none;
+		}
+	}
+}

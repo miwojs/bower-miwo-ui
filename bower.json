@@ -1,0 +1,39 @@
+{
+	"name": "miwo-ui",
+	"description": "UI components based on miwo framework",
+	"version": "0.0.4",
+	"keywords": ["framework", "mvc", "coffeescript", "components"],
+	"authors": [
+		"Dusan Kmet <morlokdk@gmail.com>"
+	],
+	"main": [
+		"css/miwo-ui.css",
+		"css/miwo-ui.min.css",
+		"js/miwo-ui.js",
+		"js/miwo-ui.min.js",
+		"img/colorpicker/bar.png",
+		"img/colorpicker/map.png",
+		"less/bootstrap.less",
+		"less/controls.less",
+		"less/forms.less",
+		"less/grids.less",
+		"less/index.less",
+		"less/mixins.less",
+		"less/picker.less",
+		"less/reset.less",
+		"less/tabs.less",
+		"less/tooltips.less",
+		"less/utils.less",
+		"less/variables.less",
+		"less/window.less"
+	],
+	"ignore": [
+	],
+	"dependencies": {
+		"bootstrap": "latest",
+		"fontawesome": "latest",
+		"miwo": "latest",
+		"miwo-data": "latest",
+		"miwo-templates": "latest"
+	}
+}
