@@ -2345,7 +2345,7 @@ BaseControl = (function(_super) {
       this.el.addClass('input-fill');
       ct.setStyle('width', this.inputWidth);
     }
-    if (this.prepend || this.append || this.buttons) {
+    if (this.prepend || this.append || this.buttons || this.tip) {
       ct.addClass('input-group');
     } else {
       ct.addClass('input-control');
@@ -2382,6 +2382,14 @@ BaseControl = (function(_super) {
         })(this);
         button.render(buttonsCt);
       }
+    }
+    if (this.tip) {
+      span = new Element('span', {
+        cls: 'input-group-addon input-group-addon-tooltip',
+        html: '<span class="glyphicon glyphicon-question-sign" data-title="' + this.tip + '" data-toggle="tooltip"></span>'
+      });
+      span.inject(ct);
+      ct.addClass('input-tooltip');
     }
     return input;
   };
@@ -3730,7 +3738,7 @@ HorizontalRenderer = (function() {
   };
 
   HorizontalRenderer.prototype.renderControls = function(control, ct) {
-    var controlsEl, descEl, helpEl, tipEl;
+    var controlsEl, descEl, helpEl;
     if (!control.controlsEl) {
       controlsEl = new Element('div');
       controlsEl.inject(ct);
@@ -3745,24 +3753,19 @@ HorizontalRenderer = (function() {
     if (control.help) {
       helpEl = new Element("span", {
         parent: controlsEl,
-        cls: "help-inline",
+        cls: "help-block",
         html: control.help
       });
+      control.helpEl = helpEl;
     }
     this.renderControl(control, controlsEl);
-    if (control.tip) {
-      tipEl = new Element("span", {
-        parent: controlsEl,
-        cls: "help-inline",
-        html: '<i class="glyphicon glyphicon-question-sign" data-behavior="tooltip" data-placement="top" data-title="' + control.tip + '" />'
-      });
-    }
     if (control.desc) {
       descEl = new Element("div", {
         parent: controlsEl,
         cls: "help-block",
         html: control.desc
       });
+      control.descEl = descEl;
     }
   };
 
@@ -7927,7 +7930,9 @@ BaseSelector = (function(_super) {
 
   BaseSelector.prototype.gridRefresh = function(grid) {};
 
-  BaseSelector.prototype.gridRendered = function(grid) {};
+  BaseSelector.prototype.gridRendered = function(grid) {
+    grid.el.addClass('grid-select-' + this.type);
+  };
 
   BaseSelector.prototype.modelSelect = function(selection, record, rowIndex) {};
 
@@ -7961,6 +7966,8 @@ CheckSelector = (function(_super) {
   function CheckSelector() {
     return CheckSelector.__super__.constructor.apply(this, arguments);
   }
+
+  CheckSelector.prototype.type = 'check';
 
   CheckSelector.prototype.selectOnRowClick = false;
 
@@ -8048,9 +8055,12 @@ RowSelector = (function(_super) {
     return RowSelector.__super__.constructor.apply(this, arguments);
   }
 
+  RowSelector.prototype.type = 'row';
+
   RowSelector.prototype.selectOnRowClick = true;
 
   RowSelector.prototype.gridRendered = function(grid) {
+    RowSelector.__super__.gridRendered.call(this, grid);
     if (this.selectOnRowClick) {
       this.mon(grid.bodyEl, "click:relay(tr)", (function(_this) {
         return function(event, target) {
