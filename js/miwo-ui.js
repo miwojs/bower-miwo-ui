@@ -3933,6 +3933,8 @@ Grid = (function(_super) {
 
   Grid.prototype.xtype = 'grid';
 
+  Grid.prototype.condensed = false;
+
   Grid.prototype.stripe = false;
 
   Grid.prototype.nowrap = true;
@@ -3940,6 +3942,8 @@ Grid = (function(_super) {
   Grid.prototype.rowclickable = false;
 
   Grid.prototype.loadMask = false;
+
+  Grid.prototype.verticalAlign = null;
 
   Grid.prototype.store = null;
 
@@ -4394,7 +4398,7 @@ ActionColumn = (function(_super) {
 
   ActionColumn.prototype.isActionColumn = true;
 
-  ActionColumn.prototype.btnSize = 'sm';
+  ActionColumn.prototype.btnSize = null;
 
   ActionColumn.prototype.preventUpdateCell = true;
 
@@ -4407,7 +4411,9 @@ ActionColumn = (function(_super) {
   }
 
   ActionColumn.prototype.attachedContainer = function(grid) {
-    this.btnSize = grid.actionBtnSize || 'sm';
+    if (!this.btnSize) {
+      this.btnSize = grid.actionBtnSize || 'sm';
+    }
   };
 
   ActionColumn.prototype.addAction = function(name, config) {
@@ -4919,11 +4925,17 @@ GridRenderer = (function(_super) {
     if (grid.stripe) {
       bodyEl.addClass('grid-stripe');
     }
+    if (grid.condensed) {
+      bodyEl.addClass('grid-condensed');
+    }
     if (grid.nowrap) {
       bodyEl.addClass('grid-nowrap');
     }
     if (grid.rowclickable) {
       bodyEl.addClass('grid-rowclickable');
+    }
+    if (grid.verticalAlign) {
+      bodyEl.addClass('grid-align-' + grid.verticalAlign);
     }
     theadTable = new Element("table");
     theadTable.inject(grid.headerEl);
@@ -7991,12 +8003,11 @@ CheckSelector = (function(_super) {
   };
 
   CheckSelector.prototype.gridRefresh = function(grid) {
-    var sm, store;
-    store = grid.getStore();
-    sm = grid.getSelectionModel();
+    var sm;
     if (!this.column) {
       throw new Error("Check selector is not binded with column. You should call setCheckColumn(). Maybe grid is not rendered");
     }
+    sm = grid.getSelectionModel();
     grid.getRecords().each((function(_this) {
       return function(rec) {
         if (!sm.isSelectable(rec)) {
@@ -8043,21 +8054,28 @@ RowSelector = (function(_super) {
     if (this.selectOnRowClick) {
       this.mon(grid.bodyEl, "click:relay(tr)", (function(_this) {
         return function(event, target) {
-          var record;
-          record = target.retrieve("record");
-          _this.selection.deselectAll();
-          _this.selection.select(record);
+          _this.onRowClick(target, event);
         };
       })(this));
     }
   };
 
+  RowSelector.prototype.onRowClick = function(tr, event) {
+    var record;
+    if (!event.control && !event.meta) {
+      this.selection.deselectAll();
+    }
+    if ((record = tr.retrieve("record"))) {
+      this.selection.toggle(record);
+    }
+  };
+
   RowSelector.prototype.getRowByRecord = function(record) {
     var tr, _i, _len, _ref;
-    _ref = this.grid.bodyEl.getChildren();
+    _ref = this.grid.bodyEl.getElements('tr');
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       tr = _ref[_i];
-      if (tr.retrieve('record') === record) {
+      if (tr.retrieve('record') && tr.retrieve('record').id === record.id) {
         return tr;
       }
     }
@@ -8065,11 +8083,19 @@ RowSelector = (function(_super) {
   };
 
   RowSelector.prototype.modelSelect = function(selection, record) {
-    this.getRowByRecord(record).addClass("grid-selected");
+    var row;
+    row = this.getRowByRecord(record);
+    if (row) {
+      row.addClass("grid-selected");
+    }
   };
 
   RowSelector.prototype.modelDeselect = function(selection, record) {
-    this.getRowByRecord(record).removeClass("grid-selected");
+    var row;
+    row = this.getRowByRecord(record);
+    if (row) {
+      row.removeClass("grid-selected");
+    }
   };
 
   return RowSelector;
@@ -8249,6 +8275,27 @@ SelectionModel = (function(_super) {
 
   SelectionModel.prototype.deselect = function(records, silent) {
     this.doDeselect(records, silent);
+  };
+
+  SelectionModel.prototype.toggle = function(records, silent) {
+    var record, toDeselect, toSelect, _i, _len, _ref;
+    toSelect = [];
+    toDeselect = [];
+    _ref = Array.from(records);
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      record = _ref[_i];
+      if (this.isSelected(record)) {
+        toDeselect.push(record);
+      } else {
+        toSelect.push(record);
+      }
+    }
+    if (toSelect.length > 0) {
+      this.select(toSelect, silent);
+    }
+    if (toDeselect.length > 0) {
+      this.deselect(toDeselect, silent);
+    }
   };
 
   SelectionModel.prototype.setSelected = function(records, select, silent) {
@@ -8658,34 +8705,34 @@ BaseTip = (function(_super) {
   };
 
   BaseTip.prototype.updatePosition = function() {
-    var distance, pos, size, tsize;
+    var distance, pos, size, sizeTarget;
     pos = this.target.getPosition();
-    tsize = this.target.getSize();
+    sizeTarget = this.target.getSize();
     size = this.el.getSize();
     distance = this.distance;
     switch (this.placement) {
       case "top":
         this.el.setPosition({
-          x: pos.x - size.x / 2 + tsize.x / 2,
+          x: pos.x - size.x / 2 + sizeTarget.x / 2,
           y: pos.y - size.y - distance
         });
         break;
       case "bottom":
         this.el.setPosition({
-          x: pos.x - size.x / 2 + tsize.x / 2,
-          y: pos.y + tsize.y + distance
+          x: pos.x - size.x / 2 + sizeTarget.x / 2,
+          y: pos.y + sizeTarget.y + distance
         });
         break;
       case "left":
         this.el.setPosition({
           x: pos.x - size.x - distance,
-          y: pos.y + tsize.y / 2 - size.y / 2
+          y: pos.y + sizeTarget.y / 2 - size.y / 2
         });
         break;
       case "right":
         this.el.setPosition({
-          x: pos.x + tsize.x + distance,
-          y: pos.y + tsize.y / 2 - size.y / 2
+          x: pos.x + sizeTarget.x + distance,
+          y: pos.y + sizeTarget.y / 2 - size.y / 2
         });
     }
   };
@@ -9016,7 +9063,7 @@ TooltipManager = (function(_super) {
   }
 
   TooltipManager.prototype.create = function(target, config) {
-    var container, delay, distance, placement, title, tooltip;
+    var container, delay, distance, item, placement, selector, title, tooltip;
     if (config == null) {
       config = {};
     }
@@ -9025,6 +9072,9 @@ TooltipManager = (function(_super) {
     placement = config.placement || target.get("data-placement") || this.placement;
     distance = config.distance || target.get("data-distance") || this.distance;
     delay = config.delay || target.get("data-delay") || this.delay;
+    if (!title && (selector = target.get('data-title-el')) && (item = target.getElement(selector))) {
+      title = item.get('html');
+    }
     if (!title) {
       return;
     }

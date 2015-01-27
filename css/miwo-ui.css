@@ -1,6 +1,3 @@
-body {
-  font-family: 'Open Sans', sans-serif;
-}
 template {
   display: none;
 }
@@ -321,21 +318,22 @@ template {
   width: 100%;
   max-width: 100%;
 }
-.grid .grid-headers th {
+.grid .grid-headers th,
+.grid .grid-rows td {
   padding: 8px;
-  line-height: 1.4;
-  vertical-align: top;
-  font-size: 12px;
+  line-height: 1.42857143;
 }
 .grid .grid-body {
   margin-bottom: 5px;
 }
 .grid .grid-rows td {
-  padding: 8px;
-  line-height: 1.4;
-  vertical-align: top;
   border-top: 1px solid #dddddd;
-  font-size: 12px;
+}
+.grid .grid-row-group td {
+  border-top: none;
+  text-transform: uppercase;
+  padding-top: 15px;
+  font-weight: bold;
 }
 .grid .checkbox {
   margin-top: -6px;
@@ -346,6 +344,22 @@ template {
 }
 .grid .checkbox label {
   padding-left: 0px;
+}
+.grid td.grid-col-actions {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.grid-align-top .grid-headers th,
+.grid-align-top .grid-rows td {
+  vertical-align: top;
+}
+.grid-align-middle .grid-headers th,
+.grid-align-middle .grid-rows td {
+  vertical-align: middle;
+}
+.grid-condensed .grid-headers th,
+.grid-condensed .grid-rows td {
+  padding: 5px;
 }
 .grid-nowrap .grid-rows td {
   overflow: hidden;
