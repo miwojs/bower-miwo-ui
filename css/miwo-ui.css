@@ -513,6 +513,53 @@ template {
   right: 0px;
   width: 75px;
 }
+.datepicker table {
+  width: 100%;
+  border-spacing: 2px;
+  border-collapse: separate;
+}
+.datepicker table td,
+.datepicker table th {
+  text-align: center;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.datepicker table thead tr:nth-child(2) th {
+  background: transparent;
+}
+.datepicker table thead th:hover {
+  background: #eeeeee;
+}
+.datepicker table td.inactive {
+  color: #cccccc;
+}
+.datepicker table td.focus {
+  background: #eeeeee;
+}
+.datepicker table td.disabled {
+  color: #cccccc;
+  background: transparent;
+  cursor: text;
+}
+.datepicker table td.selected {
+  background: #428bca;
+  color: #ffffff;
+}
+.datepicker table td.today {
+  border: 1px solid #428bca;
+}
+.datepicker .switch {
+  text-align: center;
+}
+.datepicker .invisible {
+  opacity: 0;
+}
+.datepicker-panel {
+  outline: 0;
+}
+.datepicker-footer td:hover {
+  background: #eeeeee;
+}
 /* Utils */
 .margin-no {
   margin: 0px !important;
@@ -542,4 +589,7 @@ template {
   width: auto;
   opacity: 0;
   z-index: 1000;
+}
+.text-muted-high {
+  color: #aaa;
 }

@@ -119,7 +119,7 @@ MiwoUiExtension = (function(_super) {
 module.exports = MiwoUiExtension;
 
 
-},{"./behaviors/BehaviorManager":2,"./behaviors/Popover":3,"./behaviors/Tabs":4,"./behaviors/Tooltip":5,"./form/render/FormRendererFactory":38,"./form/render/HorizontalRenderer":39,"./form/render/InlineRenderer":40,"./notify/Notificator":71,"./picker/Manager":75,"./selection/CheckSelector":80,"./selection/RowSelector":81,"./selection/SelectorFactory":83,"./tip/PopoverManager":91,"./tip/TooltipManager":93,"./translates":95,"./window/DialogFactory":102,"./window/WindowManager":105}],2:[function(require,module,exports){
+},{"./behaviors/BehaviorManager":2,"./behaviors/Popover":3,"./behaviors/Tabs":4,"./behaviors/Tooltip":5,"./form/render/FormRendererFactory":38,"./form/render/HorizontalRenderer":39,"./form/render/InlineRenderer":40,"./notify/Notificator":71,"./picker/Manager":77,"./selection/CheckSelector":87,"./selection/RowSelector":88,"./selection/SelectorFactory":90,"./tip/PopoverManager":98,"./tip/TooltipManager":100,"./translates":102,"./window/DialogFactory":109,"./window/WindowManager":112}],2:[function(require,module,exports){
 var BehaviorManager;
 
 BehaviorManager = (function() {
@@ -1995,7 +1995,7 @@ BaseControl = (function(_super) {
   };
 
   BaseControl.prototype.afterInit = function() {
-    var rules;
+    var button, items, rules, _i, _len;
     BaseControl.__super__.afterInit.apply(this, arguments);
     this.errors = [];
     this.defaultValue = this.originalValue = this.lastValue = this.value;
@@ -2008,6 +2008,14 @@ BaseControl = (function(_super) {
     if (this.width) {
       this.inputWidth = this.width;
       this.width = null;
+    }
+    items = this.buttons;
+    this.buttons = new Miwo.utils.Collection();
+    if (items) {
+      for (_i = 0, _len = items.length; _i < _len; _i++) {
+        button = items[_i];
+        this.addButton(button.name, button);
+      }
     }
   };
 
@@ -2308,6 +2316,25 @@ BaseControl = (function(_super) {
     return this.input;
   };
 
+  BaseControl.prototype.addButton = function(name, config) {
+    var button;
+    button = new Button(config);
+    button.getControl = (function(_this) {
+      return function() {
+        return _this;
+      };
+    })(this);
+    if (this.buttonsCt) {
+      button.render(this.buttonsCt);
+    }
+    this.buttons.set(name, button);
+    return button;
+  };
+
+  BaseControl.prototype.getButton = function(name) {
+    return this.buttons.get(name);
+  };
+
   BaseControl.prototype.createInput = function() {};
 
   BaseControl.prototype.doRender = function() {
@@ -2336,7 +2363,7 @@ BaseControl = (function(_super) {
   };
 
   BaseControl.prototype.renderControl = function(ct) {
-    var button, buttonsCt, input, span, _i, _len, _ref;
+    var input, span;
     input = this.getInput();
     if (input.rendered) {
       return input;
@@ -2345,7 +2372,7 @@ BaseControl = (function(_super) {
       this.el.addClass('input-fill');
       ct.setStyle('width', this.inputWidth);
     }
-    if (this.prepend || this.append || this.buttons || this.tip) {
+    if (this.prepend || this.append || this.buttons.length > 0 || this.tip) {
       ct.addClass('input-group');
     } else {
       ct.addClass('input-control');
@@ -2366,22 +2393,16 @@ BaseControl = (function(_super) {
       });
       span.inject(ct);
     }
-    if (this.buttons) {
-      buttonsCt = new Element('div', {
+    if (this.buttons.length !== 0) {
+      this.buttonsCt = new Element('div', {
         cls: 'input-group-btn'
       });
-      buttonsCt.inject(ct);
-      _ref = this.buttons;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        button = _ref[_i];
-        button = new Button(button);
-        button.getControl = (function(_this) {
-          return function() {
-            return _this;
-          };
-        })(this);
-        button.render(buttonsCt);
-      }
+      this.buttonsCt.inject(ct);
+      this.buttons.each((function(_this) {
+        return function(button) {
+          return button.render(_this.buttonsCt);
+        };
+      })(this));
     }
     if (this.tip) {
       span = new Element('span', {
@@ -2990,13 +3011,13 @@ module.exports = CheckboxListControl;
 
 
 },{"../../input/CheckboxList":57,"./BaseControl":20,"./Helpers":30}],27:[function(require,module,exports){
-var BaseControl, Color, ColorControl,
+var BaseControl, ColorControl, ColorInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 BaseControl = require('./BaseControl');
 
-Color = require('../../input/Color');
+ColorInput = require('../../input/Color');
 
 ColorControl = (function(_super) {
   __extends(ColorControl, _super);
@@ -3007,12 +3028,14 @@ ColorControl = (function(_super) {
 
   ColorControl.prototype.xtype = 'colorfield';
 
+  ColorControl.prototype.resettable = false;
+
   ColorControl.prototype.createInput = function() {
     var picker;
-    picker = new Color({
+    picker = new ColorInput({
       id: this.id,
       disabled: this.disabled,
-      resetable: false
+      resettable: this.resettable
     });
     picker.on('changed', (function(_this) {
       return function(picker, hex) {
@@ -3033,7 +3056,7 @@ ColorControl = (function(_super) {
   };
 
   ColorControl.prototype.onDirtyChange = function(isDirty) {
-    this.input.setResetable(isDirty);
+    this.input.setResettable(isDirty);
   };
 
   ColorControl.prototype.initRules = function() {
@@ -3095,11 +3118,13 @@ module.exports = ComboControl;
 
 
 },{"../../input/Combo":59,"./BaseSelectControl":21}],29:[function(require,module,exports){
-var DateControl, TextControl,
+var DateControl, DateInput, TextControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 TextControl = require('./Text');
+
+DateInput = require('../../input/Date');
 
 DateControl = (function(_super) {
   __extends(DateControl, _super);
@@ -3114,11 +3139,80 @@ DateControl = (function(_super) {
 
   DateControl.prototype.validateOnChange = false;
 
-  DateControl.prototype.placeholder = "yyyy-mm-dd";
+  DateControl.prototype.startDate = null;
+
+  DateControl.prototype.endDate = null;
+
+  DateControl.prototype.pickerBtn = false;
+
+  DateControl.prototype.todayBtn = false;
+
+  DateControl.prototype.clearBtn = false;
+
+  DateControl.prototype.resettable = false;
+
+  DateControl.prototype.resetBtn = null;
+
+  DateControl.prototype.afterInit = function() {
+    DateControl.__super__.afterInit.apply(this, arguments);
+    this.append = '<span class="glyphicon glyphicon-calendar"></span>';
+    if (this.resettable) {
+      this.resetBtn = this.addButton('reset', {
+        disabled: true,
+        icon: 'glyphicon glyphicon-remove',
+        handler: (function(_this) {
+          return function() {
+            return _this.reset();
+          };
+        })(this)
+      });
+    }
+  };
+
+  DateControl.prototype.onDirtyChange = function(isDirty) {
+    this.resetBtn.setDisabled(!isDirty);
+  };
+
+  DateControl.prototype.createInput = function() {
+    var input;
+    input = new DateInput({
+      id: this.id,
+      type: this.type,
+      disabled: this.disabled,
+      placeholder: 'yyyy-mm-dd',
+      startDate: this.startDate,
+      endDate: this.endDate,
+      todayBtn: this.todayBtn || this.pickerBtn,
+      clearBtn: this.clearBtn || this.pickerBtn
+    });
+    input.on('changed', (function(_this) {
+      return function(picker, value) {
+        _this.setValue(value);
+      };
+    })(this));
+    input.on('reset', (function(_this) {
+      return function() {
+        _this.reset();
+      };
+    })(this));
+    return input;
+  };
 
   DateControl.prototype.initRules = function() {
     DateControl.__super__.initRules.apply(this, arguments);
     this.rules.addRule("date");
+  };
+
+  DateControl.prototype.afterRenderControl = function() {
+    DateControl.__super__.afterRenderControl.apply(this, arguments);
+    this.getElement('.glyphicon-calendar').getParent().setStyle('cursor', 'pointer').on('click', (function(_this) {
+      return function() {
+        if (_this.disabled) {
+          return;
+        }
+        _this.getInput().openPicker();
+      };
+    })(this));
   };
 
   return DateControl;
@@ -3128,7 +3222,7 @@ DateControl = (function(_super) {
 module.exports = DateControl;
 
 
-},{"./Text":35}],30:[function(require,module,exports){
+},{"../../input/Date":60,"./Text":35}],30:[function(require,module,exports){
 var Helpers;
 
 Helpers = (function() {
@@ -4286,7 +4380,7 @@ Grid = (function(_super) {
 module.exports = Grid;
 
 
-},{"../nav/Paginator":69,"../selection/SelectionModel":82,"../utils/LoadMask":97,"./Operations":43,"./column/ActionColumn":44,"./column/CheckColumn":45,"./column/CheckerColumn":46,"./column/DateColumn":48,"./column/NumberColumn":49,"./column/TextColumn":50,"./renderer/GridRenderer":52}],43:[function(require,module,exports){
+},{"../nav/Paginator":69,"../selection/SelectionModel":89,"../utils/LoadMask":104,"./Operations":43,"./column/ActionColumn":44,"./column/CheckColumn":45,"./column/CheckerColumn":46,"./column/DateColumn":48,"./column/NumberColumn":49,"./column/TextColumn":50,"./renderer/GridRenderer":52}],43:[function(require,module,exports){
 var Action, Button, Operations, PopoverSubmit, Select,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5557,7 +5651,7 @@ PopoverSubmit = (function(_super) {
 module.exports = PopoverSubmit;
 
 
-},{"../../buttons/Button":6,"../../tip/Popover":90}],55:[function(require,module,exports){
+},{"../../buttons/Button":6,"../../tip/Popover":97}],55:[function(require,module,exports){
 miwo.registerExtension('miwo-ui', require('./DiExtension'));
 
 Miwo.ui = {};
@@ -5586,6 +5680,8 @@ Miwo.grid = require('./grid');
 
 Miwo.tip = require('./tip');
 
+Miwo.progress = require('./progress');
+
 Miwo.ui.utils = require('./utils');
 
 Miwo.Form = Miwo.form.container.Form;
@@ -5599,7 +5695,7 @@ Miwo.Tabs = Miwo.tabs.Tabs;
 Miwo.Grid = Miwo.grid.Grid;
 
 
-},{"./DiExtension":1,"./buttons":10,"./dropdown":14,"./form":37,"./grid":51,"./input":67,"./nav":70,"./notify":72,"./picker":78,"./selection":84,"./tabs":87,"./tip":94,"./utils":100,"./window":106}],56:[function(require,module,exports){
+},{"./DiExtension":1,"./buttons":10,"./dropdown":14,"./form":37,"./grid":51,"./input":67,"./nav":70,"./notify":72,"./picker":81,"./progress":85,"./selection":91,"./tabs":94,"./tip":101,"./utils":107,"./window":113}],56:[function(require,module,exports){
 var Checkbox,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5857,7 +5953,7 @@ ColorInput = (function(_super) {
 
   ColorInput.prototype.value = '#ffffff';
 
-  ColorInput.prototype.resetable = true;
+  ColorInput.prototype.resettable = false;
 
   ColorInput.prototype.resetBtn = null;
 
@@ -5883,6 +5979,9 @@ ColorInput = (function(_super) {
     this.inputEl.on('click', (function(_this) {
       return function(event) {
         event.stop();
+        if (_this.disabled) {
+          return;
+        }
         _this.openPicker();
       };
     })(this));
@@ -5890,12 +5989,8 @@ ColorInput = (function(_super) {
 
   ColorInput.prototype.afterRender = function() {
     ColorInput.__super__.afterRender.call(this);
-    if (this.disabled) {
-      this.setDisabled(this.disabled);
-    }
-    if (this.resetable) {
-      this.setResetable(this.resetable);
-    }
+    this.setDisabled(this.disabled);
+    this.setResettable(this.resettable);
   };
 
   ColorInput.prototype.setValue = function(value) {
@@ -5925,50 +6020,53 @@ ColorInput = (function(_super) {
     }
   };
 
-  ColorInput.prototype.setResetable = function(resetable) {
-    this.resetable = resetable;
+  ColorInput.prototype.setResettable = function(resettable) {
+    this.resettable = resettable;
     if (!this.rendered) {
       return;
     }
     if (this.resetBtn) {
-      this.resetBtn.setVisible(resetable);
+      this.resetBtn.setVisible(resettable);
     }
   };
 
   ColorInput.prototype.openPicker = function() {
-    var picker;
     if (!this.popover) {
       this.popover = this.createPicker();
     }
-    this.popover.target = this.inputEl;
     this.popover.show();
-    picker = this.popover.get('picker');
-    picker.setColor(this.getValue());
-    this.mon(picker, 'colorchange', 'onPickerColorChange');
-    this.mon(picker, 'selected', 'onPickerColorSelected');
+    this.popover.get('picker').setColor(this.getValue());
   };
 
   ColorInput.prototype.hidePicker = function() {
-    var picker;
-    this.popover.hide();
-    picker = this.popover.get('picker');
-    this.mun(picker, 'colorchange', 'onPickerColorChange');
-    this.mun(picker, 'selected', 'onPickerColorSelected');
+    this.popover.close();
   };
 
   ColorInput.prototype.createPicker = function() {
-    return miwo.pickers.get('color');
-  };
-
-  ColorInput.prototype.onPickerColorChange = function(picker, hex) {
-    this.emit("colorchange", this, hex);
-    this.setValue("#" + hex);
-  };
-
-  ColorInput.prototype.onPickerColorSelected = function(picker, hex) {
-    this.emit('changed', this, hex);
-    this.setValue("#" + hex);
-    this.hidePicker();
+    var picker, popover;
+    popover = miwo.pickers.createPicker('color', {
+      target: this.inputEl
+    });
+    picker = popover.get('picker');
+    picker.on('changed', (function(_this) {
+      return function(picker, hex) {
+        _this.emit("changed", _this, hex);
+        _this.setValue("#" + hex);
+      };
+    })(this));
+    picker.on('selected', (function(_this) {
+      return function(picker, hex) {
+        _this.emit('changed', _this, hex);
+        _this.setValue("#" + hex);
+        _this.hidePicker();
+      };
+    })(this));
+    popover.on('close', (function(_this) {
+      return function() {
+        _this.popover = null;
+      };
+    })(this));
+    return popover;
   };
 
   ColorInput.prototype.getInputEl = function() {
@@ -5980,7 +6078,9 @@ ColorInput = (function(_super) {
   };
 
   ColorInput.prototype.doDestroy = function() {
-    this.popover = null;
+    if (this.popover) {
+      this.popover.destroy();
+    }
     return ColorInput.__super__.doDestroy.apply(this, arguments);
   };
 
@@ -6523,28 +6623,121 @@ Combo = (function(_super) {
 module.exports = Combo;
 
 
-},{"../utils/ScreenMask":99}],60:[function(require,module,exports){
-var Date,
+},{"../utils/ScreenMask":106}],60:[function(require,module,exports){
+var DateInput, TextInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Date = (function(_super) {
-  __extends(Date, _super);
+TextInput = require('./Text');
 
-  function Date() {
-    return Date.__super__.constructor.apply(this, arguments);
+DateInput = (function(_super) {
+  __extends(DateInput, _super);
+
+  function DateInput() {
+    return DateInput.__super__.constructor.apply(this, arguments);
   }
 
-  Date.prototype.type = 'date';
+  DateInput.prototype.xtype = 'dateinput';
 
-  return Date;
+  DateInput.prototype.type = 'date';
 
-})(Miwo.Component);
+  DateInput.prototype.placeholder = 'yyyy-mm-dd';
 
-module.exports = Date;
+  DateInput.prototype.startDate = null;
+
+  DateInput.prototype.endDate = null;
+
+  DateInput.prototype.todayBtn = false;
+
+  DateInput.prototype.clearBtn = false;
+
+  DateInput.prototype.popover = null;
+
+  DateInput.prototype.afterRender = function() {
+    DateInput.__super__.afterRender.apply(this, arguments);
+    this.el.set('type', 'text');
+    this.el.on('click', (function(_this) {
+      return function() {
+        if (_this.disabled) {
+          return;
+        }
+        _this.openPicker();
+      };
+    })(this));
+  };
+
+  DateInput.prototype.setValue = function(value) {
+    if (Type.isDate(value)) {
+      value = this.formatDate(value);
+    }
+    this.el.set("value", value);
+  };
+
+  DateInput.prototype.formatDate = function(date) {
+    return date.getFullYear() + '-' + (date.getMonth() + 1).pad(2) + '-' + date.getDate().pad(2);
+  };
+
+  DateInput.prototype.parseDate = function(value) {
+    var parts;
+    if (!value.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
+      return null;
+    }
+    parts = value.split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+  };
+
+  DateInput.prototype.openPicker = function() {
+    if (!this.popover) {
+      this.popover = this.createPicker();
+    }
+    this.popover.show();
+    this.popover.get('picker').setDate(this.parseDate(this.getValue()), true);
+  };
+
+  DateInput.prototype.hidePicker = function() {
+    this.popover.close();
+  };
+
+  DateInput.prototype.createPicker = function() {
+    var popover;
+    popover = miwo.pickers.createPicker('date', {
+      target: this.el,
+      type: this.type,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      todayBtn: this.todayBtn,
+      clearBtn: this.clearBtn
+    });
+    popover.get('picker').on('selected', (function(_this) {
+      return function(picker, date) {
+        _this.setValue(date);
+        _this.hidePicker();
+        _this.emit('changed', _this, _this.getValue());
+      };
+    })(this));
+    popover.on('close', (function(_this) {
+      return function() {
+        _this.popover = null;
+      };
+    })(this));
+    return popover;
+  };
+
+  DateInput.prototype.doDestroy = function() {
+    if (this.popover) {
+      this.popover.destroy();
+    }
+    return DateInput.__super__.doDestroy.apply(this, arguments);
+  };
+
+  return DateInput;
+
+})(TextInput);
+
+module.exports = DateInput;
 
 
-},{}],61:[function(require,module,exports){
+},{"./Text":65}],61:[function(require,module,exports){
 var Radio,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -7100,58 +7293,58 @@ Slider = (function(_super) {
 module.exports = Slider;
 
 
-},{"../tip/Tooltip":92}],65:[function(require,module,exports){
-var Text,
+},{"../tip/Tooltip":99}],65:[function(require,module,exports){
+var TextInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Text = (function(_super) {
-  __extends(Text, _super);
+TextInput = (function(_super) {
+  __extends(TextInput, _super);
 
-  function Text() {
-    return Text.__super__.constructor.apply(this, arguments);
+  function TextInput() {
+    return TextInput.__super__.constructor.apply(this, arguments);
   }
 
-  Text.prototype.xtype = 'textinput';
+  TextInput.prototype.xtype = 'textinput';
 
-  Text.prototype.isInput = true;
+  TextInput.prototype.isInput = true;
 
-  Text.prototype.el = 'input';
+  TextInput.prototype.el = 'input';
 
-  Text.prototype.type = 'text';
+  TextInput.prototype.type = 'text';
 
-  Text.prototype.disabled = false;
+  TextInput.prototype.disabled = false;
 
-  Text.prototype.readonly = false;
+  TextInput.prototype.readonly = false;
 
-  Text.prototype.autocomplete = null;
+  TextInput.prototype.autocomplete = null;
 
-  Text.prototype.placeholder = null;
+  TextInput.prototype.placeholder = null;
 
-  Text.prototype.componentCls = 'form-control';
+  TextInput.prototype.componentCls = 'form-control';
 
-  Text.prototype.setValue = function(value) {
+  TextInput.prototype.setValue = function(value) {
     this.el.set("value", value);
   };
 
-  Text.prototype.getValue = function() {
+  TextInput.prototype.getValue = function() {
     return this.el.get("value");
   };
 
-  Text.prototype.setDisabled = function(disabled) {
+  TextInput.prototype.setDisabled = function(disabled) {
     this.disabled = disabled;
     this.el.set("disabled", disabled);
   };
 
-  Text.prototype.getInputEl = function() {
+  TextInput.prototype.getInputEl = function() {
     return this.el;
   };
 
-  Text.prototype.getInputId = function() {
+  TextInput.prototype.getInputId = function() {
     return this.id;
   };
 
-  Text.prototype.doRender = function() {
+  TextInput.prototype.doRender = function() {
     this.el.set("type", this.type);
     if (this.autocomplete !== null) {
       this.el.set("autocomplete", this.autocomplete);
@@ -7167,11 +7360,11 @@ Text = (function(_super) {
     }
   };
 
-  return Text;
+  return TextInput;
 
 })(Miwo.Component);
 
-module.exports = Text;
+module.exports = TextInput;
 
 
 },{}],66:[function(require,module,exports){
@@ -7386,7 +7579,7 @@ Pager = (function(_super) {
 module.exports = Pager;
 
 
-},{"../utils/Paginator":98}],69:[function(require,module,exports){
+},{"../utils/Paginator":105}],69:[function(require,module,exports){
 var Paginator, UtilPaginator,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -7548,7 +7741,7 @@ Paginator = (function(_super) {
 module.exports = Paginator;
 
 
-},{"../utils/Paginator":98}],70:[function(require,module,exports){
+},{"../utils/Paginator":105}],70:[function(require,module,exports){
 module.exports = {
   Paginator: require('./Paginator'),
   Pager: require('./Pager')
@@ -7646,6 +7839,267 @@ module.exports = {
 
 
 },{"./Notificator":71}],73:[function(require,module,exports){
+var BaseDatePicker,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseDatePicker = (function(_super) {
+  __extends(BaseDatePicker, _super);
+
+  function BaseDatePicker() {
+    return BaseDatePicker.__super__.constructor.apply(this, arguments);
+  }
+
+  BaseDatePicker.prototype.startDate = null;
+
+  BaseDatePicker.prototype.endDate = null;
+
+  BaseDatePicker.prototype.selectedDate = null;
+
+  BaseDatePicker.prototype.activeDate = null;
+
+  BaseDatePicker.prototype.focusedDate = null;
+
+  BaseDatePicker.prototype.componentCls = 'datepicker';
+
+  BaseDatePicker.prototype.moveIndex = null;
+
+  BaseDatePicker.prototype.items = null;
+
+  BaseDatePicker.prototype.doInit = function() {
+    BaseDatePicker.__super__.doInit.apply(this, arguments);
+    this.setActiveDate(this.activeDate || new Date());
+    if (this.startDate) {
+      this.setStartDate(this.startDate);
+    }
+    if (this.endDate) {
+      this.setEndDate(this.endDate);
+    }
+  };
+
+  BaseDatePicker.prototype.setStartDate = function(startDate) {
+    this.startDate = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), 1) : null;
+  };
+
+  BaseDatePicker.prototype.setEndDate = function(endDate) {
+    this.endDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0) : null;
+  };
+
+  BaseDatePicker.prototype.setActiveDate = function(activeDate) {
+    this.activeDate = new Date(activeDate.getTime());
+    this.activeDate.setDate(1);
+  };
+
+  BaseDatePicker.prototype.setDate = function(date, silent) {
+    if (date) {
+      this.select(date, silent);
+      this.activate(date);
+    } else {
+      this.select(null, silent);
+      this.activate(new Date());
+    }
+  };
+
+  BaseDatePicker.prototype.getDate = function() {
+    return this.selectedDate;
+  };
+
+  BaseDatePicker.prototype.select = function(date, silent) {
+    if (date) {
+      this.selectedDate = new Date(date.getTime());
+      this.focusedDate = new Date(date.getTime());
+      this.updateCalendar();
+    } else {
+      this.selectedDate = null;
+      this.focusedDate = null;
+      this.updateCalendar();
+    }
+    if (!silent) {
+      this.emit('selected', this, this.selectedDate);
+    }
+  };
+
+  BaseDatePicker.prototype.activate = function(year, month) {
+    if (Type.isDate(year)) {
+      month = year.getMonth();
+      year = year.getFullYear();
+    }
+    if (month !== void 0 && month !== null) {
+      this.activeDate.setMonth(month);
+    }
+    if (year !== void 0 && year !== null) {
+      this.activeDate.setFullYear(year);
+    }
+    this.renderCalendar();
+  };
+
+  BaseDatePicker.prototype.isDayEnabled = function(date) {
+    if (this.startDate && this.endDate) {
+      return date >= this.startDate && date <= this.endDate;
+    } else if (this.startDate) {
+      return date >= this.startDate;
+    } else if (date <= this.endDate) {
+      return true;
+    } else {
+      return true;
+    }
+  };
+
+  BaseDatePicker.prototype.formatYear = function(date) {
+    return date.getFullYear();
+  };
+
+  BaseDatePicker.prototype.formatMonth = function(date) {
+    if (date.format) {
+      return date.format('B');
+    } else {
+      return date.toString().split(' ')[1];
+    }
+  };
+
+  BaseDatePicker.prototype.doRender = function() {
+    this.renderPanel();
+  };
+
+  BaseDatePicker.prototype.renderPanel = function() {
+    this.panel = new Element('table', {
+      cls: 'table-condensed datepicker-panel',
+      tabindex: -1,
+      parent: this.el,
+      html: '<thead></thead><tbody></tbody>'
+    });
+    this.renderHeader();
+    this.renderCalendar();
+  };
+
+  BaseDatePicker.prototype.renderHeader = function() {
+    var tr;
+    tr = new Element('tr', {
+      html: '<tr>' + '<th class="prev">«</th>' + '<th class="switch" colspan="2"></th>' + '<th class="next">»</th>' + '</tr>'
+    });
+    tr.inject(this.getElement('thead'));
+  };
+
+  BaseDatePicker.prototype.renderCalendar = function() {};
+
+  BaseDatePicker.prototype.updateCalendar = function() {};
+
+  BaseDatePicker.prototype.afterRender = function() {
+    BaseDatePicker.__super__.afterRender.apply(this, arguments);
+    this.panel.getElement('.prev').on('click', (function(_this) {
+      return function() {
+        _this.activatePrev();
+      };
+    })(this));
+    this.panel.getElement('.next').on('click', (function(_this) {
+      return function() {
+        _this.activateNext();
+      };
+    })(this));
+    this.panel.getElement('.switch').on('click', (function(_this) {
+      return function() {
+        _this.emit('switch', _this);
+      };
+    })(this));
+    this.panel.on('click:relay(tbody td)', (function(_this) {
+      return function(event, target) {
+        var item;
+        if (!target.hasClass('disabled')) {
+          item = _this.items[target.get('data-index')];
+          _this.select(item.date);
+          if (item.foreign) {
+            _this.activate(item.date);
+          }
+        }
+      };
+    })(this));
+    this.panel.on('mouseenter:relay(tbody td)', (function(_this) {
+      return function(event, target) {
+        var item;
+        item = _this.items[target.get('data-index')];
+        if (_this.isDayEnabled(item.date)) {
+          _this.focusedIndex = item.index;
+          _this.focusedDate = new Date(item.date);
+          _this.updateCalendar();
+        }
+      };
+    })(this));
+    this.keyListener = new Miwo.utils.KeyListener(this.panel, 'keydown');
+    this.keyListener.pause();
+    this.keyListener.on('up', (function(_this) {
+      return function() {
+        _this.tryMoveFocus(_this.moveIndex.up);
+        return true;
+      };
+    })(this));
+    this.keyListener.on('down', (function(_this) {
+      return function() {
+        _this.tryMoveFocus(_this.moveIndex.down);
+        return true;
+      };
+    })(this));
+    this.keyListener.on('left', (function(_this) {
+      return function() {
+        _this.tryMoveFocus(_this.moveIndex.left);
+        return true;
+      };
+    })(this));
+    this.keyListener.on('right', (function(_this) {
+      return function() {
+        _this.tryMoveFocus(_this.moveIndex.right);
+        return true;
+      };
+    })(this));
+    this.keyListener.on('enter', (function(_this) {
+      return function() {
+        var item;
+        item = _this.items[_this.focusedIndex];
+        _this.select(item.date);
+        if (!item.foreign) {
+          _this.activate(item.date);
+        }
+        return true;
+      };
+    })(this));
+    if (this.selectedDate) {
+      this.focusedDate = new Date(this.selectedDate.getTime());
+    } else {
+      this.focusedDate = new Date(this.activeDate.getTime());
+    }
+    if (this.selectedDate) {
+      this.activate(this.selectedDate);
+    }
+  };
+
+  BaseDatePicker.prototype.doShow = function() {
+    BaseDatePicker.__super__.doShow.apply(this, arguments);
+    if (this.keyListener) {
+      this.keyListener.resume();
+    }
+  };
+
+  BaseDatePicker.prototype.doHide = function() {
+    BaseDatePicker.__super__.doHide.apply(this, arguments);
+    if (this.keyListener) {
+      this.keyListener.pause();
+    }
+  };
+
+  BaseDatePicker.prototype.doDestroy = function() {
+    if (this.keyListener) {
+      this.keyListener.destroy();
+    }
+    return BaseDatePicker.__super__.doDestroy.apply(this, arguments);
+  };
+
+  return BaseDatePicker;
+
+})(Miwo.Component);
+
+module.exports = BaseDatePicker;
+
+
+},{}],74:[function(require,module,exports){
 var Color, ColorPicker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -7807,7 +8261,7 @@ ColorPicker = (function(_super) {
   ColorPicker.prototype.onColorChanged = function() {
     this.preview.setStyle("background-color", "#" + this.color.hex);
     this.hexinput.set("value", this.color.hex);
-    this.emit("colorchange", this, this.color.hex);
+    this.emit("changed", this, this.color.hex);
   };
 
   ColorPicker.prototype.onBtnClick = function() {
@@ -7821,54 +8275,433 @@ ColorPicker = (function(_super) {
 module.exports = ColorPicker;
 
 
-},{"../utils/Color":96}],74:[function(require,module,exports){
+},{"../utils/Color":103}],75:[function(require,module,exports){
+var DatePicker, DayPicker, MonthPicker, YearPicker,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+DayPicker = require('./Day');
+
+MonthPicker = require('./Month');
+
+YearPicker = require('./Year');
+
+DatePicker = (function(_super) {
+  __extends(DatePicker, _super);
+
+  function DatePicker() {
+    return DatePicker.__super__.constructor.apply(this, arguments);
+  }
+
+  DatePicker.prototype.startDate = null;
+
+  DatePicker.prototype.endDate = null;
+
+  DatePicker.prototype.selectedDate = null;
+
+  DatePicker.prototype.todayBtn = false;
+
+  DatePicker.prototype.clearBtn = false;
+
+  DatePicker.prototype.doInit = function() {
+    DatePicker.__super__.doInit.apply(this, arguments);
+    this.componentCls = 'datepicker';
+    this.activeDate = new Date();
+    this.activeDate.setDate(1);
+    this.add('day', this.createComponentDay());
+    this.add('month', this.createComponentMonth());
+    this.add('year', this.createComponentYear());
+  };
+
+  DatePicker.prototype.createComponentDay = function() {
+    var picker;
+    picker = new DayPicker({
+      visible: false,
+      activeDate: this.activeDate,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      selectedDate: this.selectedDate
+    });
+    picker.on('switch', (function(_this) {
+      return function() {
+        picker.hide();
+        _this.get('month').activate(picker.activeDate);
+        _this.get('month').select(picker.selectedDate, true);
+        _this.get('month').show();
+      };
+    })(this));
+    picker.on('selected', (function(_this) {
+      return function(picker, date) {
+        _this.emit('selected', _this, date);
+      };
+    })(this));
+    return picker;
+  };
+
+  DatePicker.prototype.createComponentMonth = function() {
+    var picker;
+    picker = new MonthPicker({
+      visible: false,
+      activeDate: this.activeDate,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      selectedDate: this.selectedDate
+    });
+    picker.on('switch', (function(_this) {
+      return function() {
+        picker.hide();
+        _this.get('year').show();
+      };
+    })(this));
+    picker.on('selected', (function(_this) {
+      return function() {
+        picker.hide();
+        _this.get('day').activate(picker.selectedDate);
+        _this.get('day').show();
+      };
+    })(this));
+    return picker;
+  };
+
+  DatePicker.prototype.createComponentYear = function() {
+    var picker;
+    picker = new YearPicker({
+      visible: false,
+      activeDate: this.activeDate,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      selectedDate: this.selectedDate
+    });
+    picker.on('selected', (function(_this) {
+      return function() {
+        picker.hide();
+        _this.get('month').activate(picker.selectedDate);
+        _this.get('month').show();
+      };
+    })(this));
+    return picker;
+  };
+
+  DatePicker.prototype.activate = function(year, month) {
+    this.get('day').activate(year, month);
+  };
+
+  DatePicker.prototype.select = function(date, silent) {
+    this.get('day').select(date, silent);
+  };
+
+  DatePicker.prototype.setDate = function(date, silent) {
+    this.get('day').setDate(date, silent);
+  };
+
+  DatePicker.prototype.setStartDate = function(date) {
+    this.getComponents().each(function(picker) {
+      return picker.setStartDate(date);
+    });
+  };
+
+  DatePicker.prototype.setEndDate = function(date) {
+    this.getComponents().each(function(picker) {
+      return picker.setEndDate(date);
+    });
+  };
+
+  DatePicker.prototype.setTodayBtn = function(todayBtn) {
+    this.todayBtn = todayBtn;
+    if (this.rendered) {
+      this.getElement('.todayBtn').setVisible(this.todayBtn);
+    }
+  };
+
+  DatePicker.prototype.setClearBtn = function(clearBtn) {
+    this.clearBtn = clearBtn;
+    if (this.rendered) {
+      this.getElement('.clearBtn').setVisible(this.clearBtn);
+    }
+  };
+
+  DatePicker.prototype.getDate = function() {
+    return this.get('day').getDate();
+  };
+
+  DatePicker.prototype.setType = function(type) {
+    if (type == null) {
+      type = 'date';
+    }
+    this.type = type;
+  };
+
+  DatePicker.prototype.doRender = function() {
+    var table, tbody, td, tr;
+    DatePicker.__super__.doRender.apply(this, arguments);
+    table = new Element('table', {
+      parent: this.el,
+      cls: 'table-condensed datepicker-footer'
+    });
+    tbody = new Element('tbody', {
+      parent: table
+    });
+    tr = new Element('tr', {
+      parent: tbody
+    });
+    td = new Element('td', {
+      html: miwo.tr('miwo.picker.today'),
+      cls: 'todayBtn',
+      parent: tr
+    });
+    td.setVisible(this.todayBtn);
+    td = new Element('td', {
+      html: miwo.tr('miwo.picker.clear'),
+      cls: 'clearBtn',
+      parent: tr
+    });
+    td.setVisible(this.clearBtn);
+  };
+
+  DatePicker.prototype.afterRender = function() {
+    DatePicker.__super__.afterRender.apply(this, arguments);
+    this.get('day').show();
+    this.getElement('.todayBtn').on('click', (function(_this) {
+      return function() {
+        return _this.setDate(new Date());
+      };
+    })(this));
+    this.getElement('.clearBtn').on('click', (function(_this) {
+      return function() {
+        return _this.setDate(null);
+      };
+    })(this));
+  };
+
+  return DatePicker;
+
+})(Miwo.Container);
+
+module.exports = DatePicker;
 
 
+},{"./Day":76,"./Month":78,"./Year":80}],76:[function(require,module,exports){
+var BaseDatePicker, DayPicker,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-},{}],75:[function(require,module,exports){
-var ColorPicker, PickerManager, Popover;
+BaseDatePicker = require('./BaseDate');
+
+DayPicker = (function(_super) {
+  __extends(DayPicker, _super);
+
+  function DayPicker() {
+    return DayPicker.__super__.constructor.apply(this, arguments);
+  }
+
+  DayPicker.prototype.xtype = "daypicker";
+
+  DayPicker.prototype.baseCls = 'daypicker';
+
+  DayPicker.prototype.beforeInit = function() {
+    DayPicker.__super__.beforeInit.apply(this, arguments);
+    this.moveIndex = {
+      'up': -7,
+      'down': 7,
+      'right': 1,
+      'left': -1
+    };
+  };
+
+  DayPicker.prototype.activateNext = function() {
+    this.activate(null, this.activeDate.getMonth() + 1);
+  };
+
+  DayPicker.prototype.activatePrev = function() {
+    this.activate(null, this.activeDate.getMonth() - 1);
+  };
+
+  DayPicker.prototype.renderHeader = function() {
+    var tr;
+    tr = new Element('tr', {
+      html: '<tr>' + '<th class="prev">«</th>' + '<th class="switch" colspan="5"></th>' + '<th class="next">»</th>' + '</tr>'
+    });
+    tr.inject(this.getElement('thead'));
+    tr = new Element('tr', {
+      html: '<tr>' + '<th class="dow">Su</th>' + '<th class="dow">Mo</th>' + '<th class="dow">Tu</th>' + '<th class="dow">We</th>' + '<th class="dow">Th</th>' + '<th class="dow">Fr</th>' + '<th class="dow">Sa</th>' + '</tr>'
+    });
+    tr.inject(this.getElement('thead'));
+  };
+
+  DayPicker.prototype.renderCalendar = function() {
+    var body, date, enabledNextFirstDay, enabledPrevLastDay, first, firstDay, i, index, item, j, lastDay, length, nextFirstDay, prevLastDay, td, toDay, tr, _i, _j, _k, _l, _m, _ref;
+    date = this.activeDate;
+    firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+    lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    prevLastDay = new Date(date.getFullYear(), date.getMonth(), 0);
+    nextFirstDay = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+    toDay = new Date().toDateString();
+    this.focusedIndex = null;
+    this.items = [];
+    first = firstDay.getDay() - 1;
+    if (first <= 0) {
+      first = 6;
+    }
+    for (i = _i = first; _i >= 0; i = _i += -1) {
+      this.items.push({
+        foreign: true,
+        date: new Date(date.getFullYear(), date.getMonth(), -i)
+      });
+    }
+    for (i = _j = 1, _ref = lastDay.getDate(); 1 <= _ref ? _j <= _ref : _j >= _ref; i = 1 <= _ref ? ++_j : --_j) {
+      this.items.push({
+        foreign: false,
+        date: new Date(date.getFullYear(), date.getMonth(), i)
+      });
+    }
+    length = this.items.length;
+    for (i = _k = length; length <= 42 ? _k <= 42 : _k >= 42; i = length <= 42 ? ++_k : --_k) {
+      this.items.push({
+        foreign: true,
+        date: new Date(date.getFullYear(), date.getMonth() + 1, i - length + 1)
+      });
+    }
+    body = this.panel.getElement('tbody');
+    body.empty();
+    for (i = _l = 0; _l <= 5; i = ++_l) {
+      tr = new Element('tr', {
+        parent: body
+      });
+      for (j = _m = 0; _m <= 6; j = ++_m) {
+        index = i * 7 + j;
+        item = this.items[index];
+        td = new Element('td', {
+          parent: tr,
+          html: item.date.getDate(),
+          'data-index': index
+        });
+        if (item.foreign) {
+          td.addClass('inactive');
+        }
+        if (!this.isDayEnabled(item.date)) {
+          td.addClass('disabled');
+        }
+        if (this.isSelected(item.date)) {
+          td.addClass('selected');
+        }
+        if (this.isFocused(item.date)) {
+          td.addClass('focus');
+          this.focusedIndex = index;
+        }
+        if (toDay === item.date.toDateString()) {
+          td.addClass('today');
+        }
+        item.index = index;
+        item.cell = td;
+      }
+    }
+    enabledPrevLastDay = this.isDayEnabled(prevLastDay);
+    enabledNextFirstDay = this.isDayEnabled(nextFirstDay);
+    this.panel.getElement('.prev').toggleClass('invisible', !enabledPrevLastDay);
+    this.panel.getElement('.next').toggleClass('invisible', !enabledNextFirstDay);
+    this.panel.getElement('.switch').toggleClass('disabled', !enabledNextFirstDay && !enabledPrevLastDay);
+    this.panel.getElement('.switch').set('html', this.formatMonth(date) + ' ' + this.formatYear(date));
+  };
+
+  DayPicker.prototype.updateCalendar = function() {
+    var i, item, _i;
+    for (i = _i = 0; _i <= 41; i = ++_i) {
+      item = this.items[i];
+      item.cell.toggleClass('inactive', item.foreign).toggleClass('disabled', !this.isDayEnabled(item.date)).toggleClass('selected', this.isSelected(item.date)).toggleClass('focus', this.isFocused(item.date));
+    }
+  };
+
+  DayPicker.prototype.isSelected = function(date) {
+    return this.selectedDate !== null && this.selectedDate.toDateString() === date.toDateString();
+  };
+
+  DayPicker.prototype.isFocused = function(date) {
+    return this.focusedDate !== null && this.focusedDate.toDateString() === date.toDateString();
+  };
+
+  DayPicker.prototype.tryMoveFocus = function(index) {
+    var date, focusedIndex;
+    date = this.focusedDate.getDate();
+    focusedIndex = this.focusedIndex;
+    this.focusedIndex += index;
+    this.focusedDate.setDate(date + index);
+    if (!this.items[this.focusedIndex]) {
+      console.log("In component " + this.name + " was error");
+      this.focusedDate.setDate(date);
+      this.focusedIndex = focusedIndex;
+      return;
+    }
+    if (this.isDayEnabled(this.focusedDate)) {
+      if (this.focusedIndex < 0 || this.items[this.focusedIndex].foreign) {
+        if (this.focusedIndex < 15) {
+          this.activatePrev();
+        } else {
+          this.activateNext();
+        }
+      } else {
+        this.updateCalendar();
+      }
+    } else {
+      this.focusedDate.setDate(date);
+      this.focusedIndex = focusedIndex;
+    }
+  };
+
+  return DayPicker;
+
+})(BaseDatePicker);
+
+module.exports = DayPicker;
+
+
+},{"./BaseDate":73}],77:[function(require,module,exports){
+var ColorPicker, DatePicker, PickerManager, Popover;
 
 Popover = require('../tip/Popover');
 
 ColorPicker = require('./Color');
 
+DatePicker = require('./Date');
+
 PickerManager = (function() {
-  PickerManager.prototype.pickers = null;
+  function PickerManager() {}
 
-  function PickerManager() {
-    this.pickers = {};
-  }
-
-  PickerManager.prototype.get = function(type) {
-    if (!this.pickers[type]) {
-      this.pickers[type] = this.createPicker(type);
-    }
-    return this.pickers[type];
-  };
-
-  PickerManager.prototype.createPicker = function(type) {
+  PickerManager.prototype.createPicker = function(type, config) {
     var factory;
     factory = 'create' + type.capitalize() + 'Picker';
     if (!this[factory]) {
       throw new Error("Undefined factory function for '" + type + "' picker");
     }
-    return this[factory]();
+    return this[factory](config);
   };
 
-  PickerManager.prototype.createColorPicker = function() {
+  PickerManager.prototype.createColorPicker = function(config) {
     var popover;
     popover = new Popover({
-      title: 'Select color',
+      target: config.target,
+      closeMode: config.closeMode || 'close',
+      title: miwo.tr('miwo.pickers.selectColor'),
       styles: {
         maxWidth: 500
-      },
-      closeMode: 'hide'
+      }
     });
-    popover.add('picker', new ColorPicker());
+    popover.add('picker', new ColorPicker(config));
     return popover;
   };
 
-  PickerManager.prototype.createDatePicker = function() {};
+  PickerManager.prototype.createDatePicker = function(config) {
+    var popover;
+    popover = new Popover({
+      target: config.target,
+      closeMode: config.closeMode || 'close',
+      title: '',
+      styles: {
+        maxWidth: 500
+      }
+    });
+    popover.add('picker', new DatePicker(config));
+    return popover;
+  };
 
   return PickerManager;
 
@@ -7877,25 +8710,491 @@ PickerManager = (function() {
 module.exports = PickerManager;
 
 
-},{"../tip/Popover":90,"./Color":73}],76:[function(require,module,exports){
+},{"../tip/Popover":97,"./Color":74,"./Date":75}],78:[function(require,module,exports){
+var BaseDatePicker, MonthPicker,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseDatePicker = require('./BaseDate');
+
+MonthPicker = (function(_super) {
+  __extends(MonthPicker, _super);
+
+  function MonthPicker() {
+    return MonthPicker.__super__.constructor.apply(this, arguments);
+  }
+
+  MonthPicker.prototype.xtype = "monthpicker";
+
+  MonthPicker.prototype.baseCls = 'monthpicker';
+
+  MonthPicker.prototype.beforeInit = function() {
+    MonthPicker.__super__.beforeInit.apply(this, arguments);
+    this.moveIndex = {
+      'up': -4,
+      'down': 4,
+      'right': 1,
+      'left': -1
+    };
+  };
+
+  MonthPicker.prototype.activatePrev = function() {
+    this.activate(this.activeDate.getFullYear() - 1);
+  };
+
+  MonthPicker.prototype.activateNext = function() {
+    this.activate(this.activeDate.getFullYear() + 1);
+  };
+
+  MonthPicker.prototype.renderCalendar = function() {
+    var body, date, enabledNextYear, enabledPrevYear, i, index, item, j, nextYear, prevYear, tr, _i, _j, _k;
+    date = this.activeDate;
+    prevYear = new Date(date.getFullYear() - 1, 12, 0);
+    nextYear = new Date(date.getFullYear() + 1, 1, 1);
+    this.focusedIndex = null;
+    this.items = [];
+    for (i = _i = 0; _i <= 11; i = ++_i) {
+      this.items.push({
+        date: new Date(date.getFullYear(), i, 1),
+        index: i
+      });
+    }
+    body = this.panel.getElement('tbody');
+    body.empty();
+    for (i = _j = 0; _j <= 2; i = ++_j) {
+      tr = new Element('tr', {
+        parent: body
+      });
+      for (j = _k = 0; _k <= 3; j = ++_k) {
+        index = i * 4 + j;
+        item = this.items[index];
+        item.cell = new Element('td', {
+          parent: tr,
+          html: this.formatMonth(item.date),
+          'data-index': index,
+          'data-date': item.date
+        });
+        if (!this.isDayEnabled(item.date)) {
+          item.cell.addClass('disabled');
+        }
+        if (this.isSelected(item.date)) {
+          item.cell.addClass('selected');
+        }
+        if (this.isFocused(item.date)) {
+          item.cell.addClass('focus');
+          this.focusedIndex = index;
+        }
+      }
+    }
+    enabledPrevYear = this.isDayEnabled(prevYear);
+    enabledNextYear = this.isDayEnabled(nextYear);
+    this.panel.getElement('.prev').toggleClass('invisible', !enabledPrevYear);
+    this.panel.getElement('.next').toggleClass('invisible', !enabledNextYear);
+    this.panel.getElement('.switch').toggleClass('disabled', !enabledPrevYear && !enabledNextYear);
+    this.panel.getElement('.switch').set('html', date.getFullYear());
+  };
+
+  MonthPicker.prototype.updateCalendar = function() {
+    var i, item, _i;
+    for (i = _i = 0; _i <= 11; i = ++_i) {
+      item = this.items[i];
+      item.cell.toggleClass('disabled', !this.isDayEnabled(item.date)).toggleClass('selected', this.isSelected(item.date)).toggleClass('focus', this.isFocused(item.date));
+    }
+  };
+
+  MonthPicker.prototype.isSelected = function(date) {
+    return this.selectedDate !== null && this.selectedDate.getYear() === date.getYear() && this.selectedDate.getMonth() === date.getMonth();
+  };
+
+  MonthPicker.prototype.isFocused = function(date) {
+    return this.focusedDate !== null && this.focusedDate.getYear() === date.getYear() && this.focusedDate.getMonth() === date.getMonth();
+  };
+
+  MonthPicker.prototype.tryMoveFocus = function(index) {
+    var focusedIndex, month;
+    month = this.focusedDate.getMonth();
+    focusedIndex = this.focusedIndex;
+    this.focusedIndex += index;
+    this.focusedDate.setMonth(month + index);
+    if (this.isDayEnabled(this.focusedDate)) {
+      this.updateCalendar();
+    } else {
+      this.focusedDate.setMonth(month);
+      this.focusedDateIndex = focusedIndex;
+    }
+  };
+
+  return MonthPicker;
+
+})(BaseDatePicker);
+
+module.exports = MonthPicker;
+
+
+},{"./BaseDate":73}],79:[function(require,module,exports){
 
 
 
-},{}],77:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
+var BaseDatePicker, YearPicker,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseDatePicker = require('./BaseDate');
+
+YearPicker = (function(_super) {
+  __extends(YearPicker, _super);
+
+  function YearPicker() {
+    return YearPicker.__super__.constructor.apply(this, arguments);
+  }
+
+  YearPicker.prototype.xtype = "yearpicker";
+
+  YearPicker.prototype.baseCls = 'yearpicker';
+
+  YearPicker.prototype.beforeInit = function() {
+    YearPicker.__super__.beforeInit.apply(this, arguments);
+    this.moveIndex = {
+      'up': -4,
+      'down': 4,
+      'right': 1,
+      'left': -1
+    };
+  };
+
+  YearPicker.prototype.activatePrev = function() {
+    this.activate(this.activeDate.getFullYear() - 10);
+  };
+
+  YearPicker.prototype.activateNext = function() {
+    this.activate(this.activeDate.getFullYear() + 10);
+  };
+
+  YearPicker.prototype.renderCalendar = function() {
+    var body, date, enabledNextYear, enabledPrevYear, firstYear, i, index, item, j, lastYear, nextYear, prevYear, tr, _i, _j, _k;
+    date = this.activeDate;
+    prevYear = new Date(date.getFullYear() - 1, 0, 1);
+    nextYear = new Date(date.getFullYear() + 10, 0, 1);
+    this.focusedIndex = null;
+    this.items = [];
+    for (i = _i = 0; _i <= 11; i = ++_i) {
+      this.items.push({
+        date: new Date(date.getFullYear() + i - 1, 0, 1),
+        index: i,
+        foreign: i === 0 && i === 11
+      });
+    }
+    body = this.panel.getElement('tbody');
+    body.empty();
+    for (i = _j = 0; _j <= 2; i = ++_j) {
+      tr = new Element('tr', {
+        parent: body
+      });
+      for (j = _k = 0; _k <= 3; j = ++_k) {
+        index = i * 4 + j;
+        item = this.items[index];
+        item.cell = new Element('td', {
+          parent: tr,
+          html: this.formatYear(item.date),
+          'data-index': index,
+          'data-date': item.date
+        });
+        if (!this.isDayEnabled(item.date)) {
+          item.cell.addClass('disabled');
+        }
+        if (this.isSelected(item.date)) {
+          item.cell.addClass('selected');
+        }
+        if (this.isFocused(item.date)) {
+          item.cell.addClass('focus');
+          this.focusedIndex = index;
+        }
+      }
+    }
+    firstYear = new Date(date.getFullYear(), 0, 1);
+    lastYear = new Date(date.getFullYear() + 9, 0, 1);
+    enabledPrevYear = this.isDayEnabled(prevYear);
+    enabledNextYear = this.isDayEnabled(nextYear);
+    this.panel.getElement('.prev').toggleClass('invisible', !enabledPrevYear);
+    this.panel.getElement('.next').toggleClass('invisible', !enabledNextYear);
+    this.panel.getElement('.switch').toggleClass('disabled', !enabledPrevYear && !enabledNextYear);
+    this.panel.getElement('.switch').set('html', this.formatYear(firstYear) + ' - ' + this.formatYear(lastYear));
+  };
+
+  YearPicker.prototype.updateCalendar = function() {
+    var i, item, _i;
+    for (i = _i = 0; _i <= 11; i = ++_i) {
+      item = this.items[i];
+      item.cell.toggleClass('disabled', !this.isDayEnabled(item.date)).toggleClass('selected', this.isSelected(item.date)).toggleClass('focus', this.isFocused(item.date));
+    }
+  };
+
+  YearPicker.prototype.isSelected = function(date) {
+    return this.selectedDate !== null && this.selectedDate.getYear() === date.getYear();
+  };
+
+  YearPicker.prototype.isFocused = function(date) {
+    return this.focusedDate !== null && this.focusedDate.getYear() === date.getYear();
+  };
+
+  YearPicker.prototype.tryMoveFocus = function(index) {
+    var focusedIndex, year;
+    year = this.focusedDate.getFullYear();
+    focusedIndex = this.focusedIndex;
+    this.focusedIndex += index;
+    this.focusedDate.setFullYear(year + index);
+    if (this.isDayEnabled(this.focusedDate)) {
+      if (this.focusedIndex < 0 || this.items[this.focusedIndex].foreign) {
+        if (this.focusedIndex < 6) {
+          this.activatePrev();
+        } else {
+          this.activateNext();
+        }
+      } else {
+        this.updateCalendar();
+      }
+    } else {
+      this.focusedDate.setFullYear(year);
+      this.focusedDateIndex = focusedIndex;
+    }
+  };
+
+  return YearPicker;
+
+})(BaseDatePicker);
+
+module.exports = YearPicker;
 
 
-
-},{}],78:[function(require,module,exports){
+},{"./BaseDate":73}],81:[function(require,module,exports){
 module.exports = {
   Manager: require('./Manager'),
   Color: require('./Color'),
-  Date: require('./Date'),
+  Day: require('./Day'),
   Month: require('./Month'),
+  Year: require('./Year'),
+  Date: require('./Date'),
   Time: require('./Time')
 };
 
 
-},{"./Color":73,"./Date":74,"./Manager":75,"./Month":76,"./Time":77}],79:[function(require,module,exports){
+},{"./Color":74,"./Date":75,"./Day":76,"./Manager":77,"./Month":78,"./Time":79,"./Year":80}],82:[function(require,module,exports){
+var Bar,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Bar = (function(_super) {
+  __extends(Bar, _super);
+
+  function Bar() {
+    return Bar.__super__.constructor.apply(this, arguments);
+  }
+
+  Bar.prototype.value = 50;
+
+  Bar.prototype.minWidth = null;
+
+  Bar.prototype.desc = '';
+
+  Bar.prototype.type = null;
+
+  Bar.prototype.hideValue = false;
+
+  Bar.prototype.striped = false;
+
+  Bar.prototype.active = false;
+
+  Bar.prototype.baseCls = 'progress-bar';
+
+  Bar.prototype.role = 'progressbar';
+
+  Bar.prototype.progressEl = null;
+
+  Bar.prototype.statusEl = null;
+
+  Bar.prototype.valueEl = null;
+
+  Bar.prototype.descEl = null;
+
+  Bar.prototype.setValue = function(value) {
+    this.value = value;
+    this.emit('change', this, value);
+    if (!this.rendered) {
+      return;
+    }
+    this.el.setStyle('width', value + '%');
+    this.el.set('aria-valuenow', value);
+    this.valueEl.set('text', value + '%');
+  };
+
+  Bar.prototype.setDescription = function(desc) {
+    this.desc = desc;
+    if (!this.rendered) {
+      return;
+    }
+    this.descEl.set('html', desc);
+  };
+
+  Bar.prototype.setType = function(type) {
+    if (this.type) {
+      this.el.removeClass('progress-bar-' + this.type);
+    }
+    if (type) {
+      this.el.addClass('progress-bar-' + type);
+    }
+    this.type = type;
+    this.emit('type', this, type);
+  };
+
+  Bar.prototype.setActive = function(active) {
+    if (active == null) {
+      active = true;
+    }
+    this.active = active;
+    this.emit('active', this, active);
+    if (!this.rendered) {
+      return;
+    }
+    this.progressEl.toggleClass('progress-bar-active', active);
+  };
+
+  Bar.prototype.setHideValue = function(hideValue) {
+    this.hideValue = hideValue;
+    if (!this.rendered) {
+      return;
+    }
+    this.valueEl.setVisible(!this.hideValue);
+  };
+
+  Bar.prototype.getValue = function() {
+    return this.value;
+  };
+
+  Bar.prototype.doRender = function() {
+    this.el.set('html', '<span miwo-reference="labelEl" class="progress-bar-label">' + '<span miwo-reference="valueEl" class="progress-bar-value">' + this.value + '%</span> ' + '<span miwo-reference="descEl" class="progress-bar-desc">' + this.desc + '</span>' + '</span>');
+  };
+
+  Bar.prototype.afterRender = function() {
+    Bar.__super__.afterRender.apply(this, arguments);
+    this.valueEl.setVisible(!this.hideValue);
+    if (this.type) {
+      this.el.addClass('progress-bar-' + this.type);
+    }
+    if (this.striped) {
+      this.el.addClass('progress-bar-striped');
+    }
+    if (this.active) {
+      this.el.addClass('active');
+    }
+    if (this.minWidth) {
+      this.el.setStyle('min-width', this.minWidth + 'em');
+    }
+    this.el.setStyle('width', this.value + '%');
+    this.el.set('aria-valuenow', this.value);
+    this.el.set('aria-valuemin', 0);
+    this.el.set('aria-valuemax', 100);
+  };
+
+  return Bar;
+
+})(Miwo.Component);
+
+module.exports = Bar;
+
+
+},{}],83:[function(require,module,exports){
+var Bar, ProgressBar,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Bar = require('./Bar');
+
+ProgressBar = (function(_super) {
+  __extends(ProgressBar, _super);
+
+  ProgressBar.prototype.bar = null;
+
+  ProgressBar.prototype.baseCls = 'progress';
+
+  function ProgressBar(config) {
+    this.bar = new Bar(config);
+    ProgressBar.__super__.constructor.call(this, config);
+    return;
+  }
+
+  ProgressBar.prototype.doInit = function() {
+    ProgressBar.__super__.doInit.apply(this, arguments);
+    this.add('bar', this.bar);
+  };
+
+  ProgressBar.prototype.setValue = function(value) {
+    return this.bar.setValue(value);
+  };
+
+  ProgressBar.prototype.setDescription = function(desc) {
+    return this.bar.setDescription(desc);
+  };
+
+  ProgressBar.prototype.setType = function(type) {
+    return this.bar.setType(type);
+  };
+
+  ProgressBar.prototype.setActive = function(active) {
+    return this.bar.setActive(active);
+  };
+
+  ProgressBar.prototype.setHideValue = function(hideValue) {
+    return this.bar.setHideValue(hideValue);
+  };
+
+  ProgressBar.prototype.getValue = function() {
+    return this.bar.getValue();
+  };
+
+  return ProgressBar;
+
+})(Miwo.Container);
+
+module.exports = ProgressBar;
+
+
+},{"./Bar":82}],84:[function(require,module,exports){
+var Bar, StackedBar,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Bar = require('./Bar');
+
+StackedBar = (function(_super) {
+  __extends(StackedBar, _super);
+
+  function StackedBar() {
+    return StackedBar.__super__.constructor.apply(this, arguments);
+  }
+
+  StackedBar.prototype.baseCls = 'progress';
+
+  StackedBar.prototype.addBar = function(name, config) {
+    return this.add(name, new Bar(config));
+  };
+
+  return StackedBar;
+
+})(Miwo.Container);
+
+module.exports = StackedBar;
+
+
+},{"./Bar":82}],85:[function(require,module,exports){
+module.exports = {
+  Bar: require('./Bar'),
+  ProgressBar: require('./ProgressBar'),
+  StackedBar: require('./StackedBar')
+};
+
+
+},{"./Bar":82,"./ProgressBar":83,"./StackedBar":84}],86:[function(require,module,exports){
 var BaseSelector,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -7953,7 +9252,7 @@ BaseSelector = (function(_super) {
 module.exports = BaseSelector;
 
 
-},{}],80:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 var CheckSelector, RowSelector,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8041,7 +9340,7 @@ CheckSelector = (function(_super) {
 module.exports = CheckSelector;
 
 
-},{"./RowSelector":81}],81:[function(require,module,exports){
+},{"./RowSelector":88}],88:[function(require,module,exports){
 var BaseSelector, RowSelector,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8115,7 +9414,7 @@ RowSelector = (function(_super) {
 module.exports = RowSelector;
 
 
-},{"./BaseSelector":79}],82:[function(require,module,exports){
+},{"./BaseSelector":86}],89:[function(require,module,exports){
 var SelectionModel,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8427,7 +9726,7 @@ SelectionModel = (function(_super) {
 module.exports = SelectionModel;
 
 
-},{}],83:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 var SelectorFactory;
 
 SelectorFactory = (function() {
@@ -8455,7 +9754,7 @@ SelectorFactory = (function() {
 module.exports = SelectorFactory;
 
 
-},{}],84:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 module.exports = {
   SelectorFactory: require('./SelectorFactory'),
   BaseSelector: require('./BaseSelector'),
@@ -8465,7 +9764,7 @@ module.exports = {
 };
 
 
-},{"./BaseSelector":79,"./CheckSelector":80,"./RowSelector":81,"./SelectionModel":82,"./SelectorFactory":83}],85:[function(require,module,exports){
+},{"./BaseSelector":86,"./CheckSelector":87,"./RowSelector":88,"./SelectionModel":89,"./SelectorFactory":90}],92:[function(require,module,exports){
 var Panel,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8509,7 +9808,7 @@ Panel = (function(_super) {
 module.exports = Panel;
 
 
-},{}],86:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 var Panel, Tabs,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8615,14 +9914,14 @@ Tabs = (function(_super) {
 module.exports = Tabs;
 
 
-},{"./Panel":85}],87:[function(require,module,exports){
+},{"./Panel":92}],94:[function(require,module,exports){
 module.exports = {
   Tabs: require('./Tabs'),
   Panel: require('./Panel')
 };
 
 
-},{"./Panel":85,"./Tabs":86}],88:[function(require,module,exports){
+},{"./Panel":92,"./Tabs":93}],95:[function(require,module,exports){
 var BaseTip,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8754,7 +10053,7 @@ BaseTip = (function(_super) {
 module.exports = BaseTip;
 
 
-},{}],89:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 var BaseTipManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8845,7 +10144,7 @@ BaseTipManager = (function(_super) {
 module.exports = BaseTipManager;
 
 
-},{}],90:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 var BaseTip, Popover, ScreenMask,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8880,9 +10179,9 @@ Popover = (function(_super) {
     this.screenMask = new ScreenMask((function(_this) {
       return function() {
         if (_this.closeMode === 'hide') {
-          return _this.hide();
+          _this.hide();
         } else {
-          return _this.close();
+          _this.close();
         }
       };
     })(this));
@@ -8891,7 +10190,7 @@ Popover = (function(_super) {
   Popover.prototype.beforeRender = function() {
     Popover.__super__.beforeRender.apply(this, arguments);
     this.el.addClass("in " + this.placement + " popover-" + this.type);
-    this.el.set('html', '<div class="arrow"></div>' + '<h3 miwo-reference="titleEl" class="popover-title"></h3>' + '<div miwo-reference="contentEl" class="popover-content"></div>');
+    this.el.set('html', '<div class="arrow"></div>' + '<h3 miwo-reference="titleEl" class="popover-title" style="display:none"></h3>' + '<div miwo-reference="contentEl" class="popover-content"></div>');
   };
 
   Popover.prototype.show = function() {
@@ -8918,6 +10217,7 @@ Popover = (function(_super) {
     this.title = title;
     if (this.rendered) {
       this.titleEl.set("html", title);
+      this.titleEl.setVisible(title);
       this.updatePosition();
     }
   };
@@ -8954,7 +10254,7 @@ Popover = (function(_super) {
 module.exports = Popover;
 
 
-},{"../utils/ScreenMask":99,"./BaseTip":88}],91:[function(require,module,exports){
+},{"../utils/ScreenMask":106,"./BaseTip":95}],98:[function(require,module,exports){
 var BaseTipManager, Popover, PopoverManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9007,7 +10307,7 @@ PopoverManager = (function(_super) {
 module.exports = PopoverManager;
 
 
-},{"./BaseTipManager":89,"./Popover":90}],92:[function(require,module,exports){
+},{"./BaseTipManager":96,"./Popover":97}],99:[function(require,module,exports){
 var BaseTip, Tooltip,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9056,7 +10356,7 @@ Tooltip = (function(_super) {
 module.exports = Tooltip;
 
 
-},{"./BaseTip":88}],93:[function(require,module,exports){
+},{"./BaseTip":95}],100:[function(require,module,exports){
 var BaseTipManager, Tooltip, TooltipManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9104,7 +10404,7 @@ TooltipManager = (function(_super) {
 module.exports = TooltipManager;
 
 
-},{"./BaseTipManager":89,"./Tooltip":92}],94:[function(require,module,exports){
+},{"./BaseTipManager":96,"./Tooltip":99}],101:[function(require,module,exports){
 module.exports = {
   BaseTip: require('./BaseTip'),
   Popover: require('./Popover'),
@@ -9112,7 +10412,7 @@ module.exports = {
 };
 
 
-},{"./BaseTip":88,"./Popover":90,"./Tooltip":92}],95:[function(require,module,exports){
+},{"./BaseTip":95,"./Popover":97,"./Tooltip":99}],102:[function(require,module,exports){
 module.exports = {
   nav: {
     prev: 'Previous',
@@ -9130,11 +10430,16 @@ module.exports = {
   window: {
     close: 'Close window',
     hide: 'Hide window'
+  },
+  picker: {
+    selectColor: 'Select color',
+    today: 'Today',
+    clear: 'Clear'
   }
 };
 
 
-},{}],96:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 var Color;
 
 Color = (function() {
@@ -9388,7 +10693,7 @@ Color.intToHex = function(dec) {
 module.exports = Color;
 
 
-},{}],97:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 var LoadMask,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9409,7 +10714,7 @@ LoadMask = (function(_super) {
 module.exports = LoadMask;
 
 
-},{}],98:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 var Paginator,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9489,7 +10794,7 @@ Paginator = (function(_super) {
 module.exports = Paginator;
 
 
-},{}],99:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 var ScreenMask;
 
 ScreenMask = (function() {
@@ -9526,7 +10831,7 @@ ScreenMask = (function() {
 module.exports = ScreenMask;
 
 
-},{}],100:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 module.exports = {
   LoadMask: require('./LoadMask'),
   ScreenMask: require('./ScreenMask'),
@@ -9534,7 +10839,7 @@ module.exports = {
 };
 
 
-},{"./Color":96,"./LoadMask":97,"./ScreenMask":99}],101:[function(require,module,exports){
+},{"./Color":103,"./LoadMask":104,"./ScreenMask":106}],108:[function(require,module,exports){
 var Dialog, Window,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9583,7 +10888,7 @@ Dialog = (function(_super) {
 module.exports = Dialog;
 
 
-},{"./Window":104}],102:[function(require,module,exports){
+},{"./Window":111}],109:[function(require,module,exports){
 var Button, Dialog, DialogFactory;
 
 Dialog = require('./Dialog');
@@ -9666,7 +10971,7 @@ DialogFactory = (function() {
 module.exports = DialogFactory;
 
 
-},{"../buttons/Button":6,"./Dialog":101}],103:[function(require,module,exports){
+},{"../buttons/Button":6,"./Dialog":108}],110:[function(require,module,exports){
 var Form, FormWindow, Window,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9735,7 +11040,7 @@ FormWindow = (function(_super) {
 module.exports = FormWindow;
 
 
-},{"../form/container/Form":19,"./Window":104}],104:[function(require,module,exports){
+},{"../form/container/Form":19,"./Window":111}],111:[function(require,module,exports){
 var Button, ToolButton, Window,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9996,7 +11301,7 @@ Window = (function(_super) {
 module.exports = Window;
 
 
-},{"../buttons/Button":6,"../buttons/ToolButton":9}],105:[function(require,module,exports){
+},{"../buttons/Button":6,"../buttons/ToolButton":9}],112:[function(require,module,exports){
 var WindowManager;
 
 WindowManager = (function() {
@@ -10037,7 +11342,7 @@ WindowManager = (function() {
 module.exports = WindowManager;
 
 
-},{}],106:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 module.exports = {
   Window: require('./Window'),
   FormWindow: require('./FormWindow'),
@@ -10045,4 +11350,4 @@ module.exports = {
 };
 
 
-},{"./Dialog":101,"./FormWindow":103,"./Window":104}]},{},[55])
+},{"./Dialog":108,"./FormWindow":110,"./Window":111}]},{},[55])
