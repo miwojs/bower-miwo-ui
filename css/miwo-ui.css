@@ -560,6 +560,11 @@ template {
 .datepicker-footer td:hover {
   background: #eeeeee;
 }
+.monthpicker table td,
+.yearpicker table td {
+  height: 50px;
+  line-height: 50px;
+}
 /* Utils */
 .margin-no {
   margin: 0px !important;

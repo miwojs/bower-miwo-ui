@@ -66,9 +66,6 @@
 }
 
 .datepicker {
-	&-panel {
-
-	}
 	table {
 		width: 100%;
 		border-spacing: 2px;
@@ -99,6 +96,9 @@
 			background: @component-active-bg;
 			color: @component-active-color;
 		}
+		td.today {
+			border: 1px solid @brand-primary;
+		}
 	}
 	.switch {
 		text-align: center;
@@ -106,16 +106,12 @@
 	.invisible {
 		opacity: 0;
 	}
-}
-
-.monthpicker {
-
-}
-
-.timepicker {
-
-}
-
-.yearpicker {
-
+	&-panel {
+		outline: 0;
+	}
+	&-footer {
+		td:hover {
+			background: @gray-lighter;
+		}
+	}
 }

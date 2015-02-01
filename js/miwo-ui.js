@@ -2582,6 +2582,8 @@ BaseTextControl = (function(_super) {
 
   BaseTextControl.prototype.type = null;
 
+  BaseTextControl.prototype.editable = true;
+
   BaseTextControl.prototype.initRules = function() {
     BaseTextControl.__super__.initRules.apply(this, arguments);
     if (this.minLength) {
@@ -2651,6 +2653,10 @@ BaseTextControl = (function(_super) {
   };
 
   BaseTextControl.prototype.onInputKeydown = function(e) {
+    if (!this.editable) {
+      e.stop();
+      return;
+    }
     if (e.key.length === 1) {
       this.onKeydown(this, e.key, e);
       this.emit("keydown", this, e.key, e);
@@ -3028,14 +3034,22 @@ ColorControl = (function(_super) {
 
   ColorControl.prototype.xtype = 'colorfield';
 
-  ColorControl.prototype.resettable = false;
+  ColorControl.prototype.readonly = false;
+
+  ColorControl.prototype.doInit = function() {
+    ColorControl.__super__.doInit.apply(this, arguments);
+    if (this.value) {
+      this.value = this.value.toUpperCase();
+    }
+  };
 
   ColorControl.prototype.createInput = function() {
     var picker;
     picker = new ColorInput({
       id: this.id,
       disabled: this.disabled,
-      resettable: this.resettable
+      readonly: this.readonly,
+      resettable: false
     });
     picker.on('changed', (function(_this) {
       return function(picker, hex) {
@@ -3051,11 +3065,15 @@ ColorControl = (function(_super) {
   };
 
   ColorControl.prototype.setValue = function(value) {
+    if (value) {
+      value = value.toUpperCase();
+    }
     ColorControl.__super__.setValue.call(this, value);
     this.input.setValue(value);
   };
 
   ColorControl.prototype.onDirtyChange = function(isDirty) {
+    ColorControl.__super__.onDirtyChange.call(this, isDirty);
     this.input.setResettable(isDirty);
   };
 
@@ -3151,6 +3169,8 @@ DateControl = (function(_super) {
 
   DateControl.prototype.resettable = false;
 
+  DateControl.prototype.editable = false;
+
   DateControl.prototype.resetBtn = null;
 
   DateControl.prototype.afterInit = function() {
@@ -3170,7 +3190,9 @@ DateControl = (function(_super) {
   };
 
   DateControl.prototype.onDirtyChange = function(isDirty) {
-    this.resetBtn.setDisabled(!isDirty);
+    if (this.resetBtn) {
+      this.resetBtn.setDisabled(!isDirty);
+    }
   };
 
   DateControl.prototype.createInput = function() {
@@ -3179,6 +3201,7 @@ DateControl = (function(_super) {
       id: this.id,
       type: this.type,
       disabled: this.disabled,
+      readonly: this.readonly,
       placeholder: 'yyyy-mm-dd',
       startDate: this.startDate,
       endDate: this.endDate,
@@ -3207,10 +3230,7 @@ DateControl = (function(_super) {
     DateControl.__super__.afterRenderControl.apply(this, arguments);
     this.getElement('.glyphicon-calendar').getParent().setStyle('cursor', 'pointer').on('click', (function(_this) {
       return function() {
-        if (_this.disabled) {
-          return;
-        }
-        _this.getInput().openPicker();
+        return _this.getInput().openPicker();
       };
     })(this));
   };
@@ -5953,6 +5973,8 @@ ColorInput = (function(_super) {
 
   ColorInput.prototype.value = '#ffffff';
 
+  ColorInput.prototype.readonly = false;
+
   ColorInput.prototype.resettable = false;
 
   ColorInput.prototype.resetBtn = null;
@@ -5979,9 +6001,6 @@ ColorInput = (function(_super) {
     this.inputEl.on('click', (function(_this) {
       return function(event) {
         event.stop();
-        if (_this.disabled) {
-          return;
-        }
         _this.openPicker();
       };
     })(this));
@@ -6031,6 +6050,9 @@ ColorInput = (function(_super) {
   };
 
   ColorInput.prototype.openPicker = function() {
+    if (this.disabled || this.readonly) {
+      return;
+    }
     if (!this.popover) {
       this.popover = this.createPicker();
     }
@@ -6044,7 +6066,7 @@ ColorInput = (function(_super) {
 
   ColorInput.prototype.createPicker = function() {
     var picker, popover;
-    popover = miwo.pickers.createPicker('color', {
+    popover = miwo.pickers.createPopoverPicker('color', {
       target: this.inputEl
     });
     picker = popover.get('picker');
@@ -6658,10 +6680,7 @@ DateInput = (function(_super) {
     this.el.set('type', 'text');
     this.el.on('click', (function(_this) {
       return function() {
-        if (_this.disabled) {
-          return;
-        }
-        _this.openPicker();
+        return _this.openPicker();
       };
     })(this));
   };
@@ -6670,23 +6689,13 @@ DateInput = (function(_super) {
     if (Type.isDate(value)) {
       value = this.formatDate(value);
     }
-    this.el.set("value", value);
-  };
-
-  DateInput.prototype.formatDate = function(date) {
-    return date.getFullYear() + '-' + (date.getMonth() + 1).pad(2) + '-' + date.getDate().pad(2);
-  };
-
-  DateInput.prototype.parseDate = function(value) {
-    var parts;
-    if (!value.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
-      return null;
-    }
-    parts = value.split('-');
-    return new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+    DateInput.__super__.setValue.call(this, value);
   };
 
   DateInput.prototype.openPicker = function() {
+    if (this.disabled || this.readonly) {
+      return;
+    }
     if (!this.popover) {
       this.popover = this.createPicker();
     }
@@ -6700,7 +6709,7 @@ DateInput = (function(_super) {
 
   DateInput.prototype.createPicker = function() {
     var popover;
-    popover = miwo.pickers.createPicker('date', {
+    popover = miwo.pickers.createPopoverPicker('date', {
       target: this.el,
       type: this.type,
       startDate: this.startDate,
@@ -6721,6 +6730,19 @@ DateInput = (function(_super) {
       };
     })(this));
     return popover;
+  };
+
+  DateInput.prototype.formatDate = function(date) {
+    return date.getFullYear() + '-' + (date.getMonth() + 1).pad(2) + '-' + date.getDate().pad(2);
+  };
+
+  DateInput.prototype.parseDate = function(value) {
+    var parts;
+    if (!value.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
+      return null;
+    }
+    parts = value.split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
   };
 
   DateInput.prototype.doDestroy = function() {
@@ -8167,10 +8189,10 @@ ColorPicker = (function(_super) {
         _this.updateBarOnMouseEvent(event);
       };
     })(this));
-    this.setColor(this.color.hex, true);
+    this.setColor(this.color.hex, true, true);
   };
 
-  ColorPicker.prototype.setColor = function(color, update) {
+  ColorPicker.prototype.setColor = function(color, update, silent) {
     color = color.toUpperCase();
     color = color.replace("#", "");
     if (this.isColorValid(color) && (this.color.hex !== color || update)) {
@@ -8179,7 +8201,7 @@ ColorPicker = (function(_super) {
       this.doSetHue(this.color.h);
       this.doSetSaturationAndValue(this.color.s, this.color.v);
       this.color.setHex(color);
-      this.onColorChanged();
+      this.onColorChanged(silent);
     }
   };
 
@@ -8258,10 +8280,12 @@ ColorPicker = (function(_super) {
     });
   };
 
-  ColorPicker.prototype.onColorChanged = function() {
+  ColorPicker.prototype.onColorChanged = function(silent) {
     this.preview.setStyle("background-color", "#" + this.color.hex);
     this.hexinput.set("value", this.color.hex);
-    this.emit("changed", this, this.color.hex);
+    if (!silent) {
+      this.emit("changed", this, this.color.hex);
+    }
   };
 
   ColorPicker.prototype.onBtnClick = function() {
@@ -8328,6 +8352,7 @@ DatePicker = (function(_super) {
         _this.get('month').activate(picker.activeDate);
         _this.get('month').select(picker.selectedDate, true);
         _this.get('month').show();
+        _this.emit('switch', _this, 'month');
       };
     })(this));
     picker.on('selected', (function(_this) {
@@ -8351,6 +8376,7 @@ DatePicker = (function(_super) {
       return function() {
         picker.hide();
         _this.get('year').show();
+        _this.emit('switch', _this, 'year');
       };
     })(this));
     picker.on('selected', (function(_this) {
@@ -8358,6 +8384,7 @@ DatePicker = (function(_super) {
         picker.hide();
         _this.get('day').activate(picker.selectedDate);
         _this.get('day').show();
+        _this.emit('switch', _this, 'day');
       };
     })(this));
     return picker;
@@ -8377,6 +8404,7 @@ DatePicker = (function(_super) {
         picker.hide();
         _this.get('month').activate(picker.selectedDate);
         _this.get('month').show();
+        _this.emit('switch', _this, 'month');
       };
     })(this));
     return picker;
@@ -8666,7 +8694,7 @@ DatePicker = require('./Date');
 PickerManager = (function() {
   function PickerManager() {}
 
-  PickerManager.prototype.createPicker = function(type, config) {
+  PickerManager.prototype.createPopoverPicker = function(type, config) {
     var factory;
     factory = 'create' + type.capitalize() + 'Picker';
     if (!this[factory]) {
@@ -8690,16 +8718,23 @@ PickerManager = (function() {
   };
 
   PickerManager.prototype.createDatePicker = function(config) {
-    var popover;
+    var picker, popover;
     popover = new Popover({
       target: config.target,
       closeMode: config.closeMode || 'close',
       title: '',
       styles: {
-        maxWidth: 500
+        maxWidth: 500,
+        width: 320
       }
     });
-    popover.add('picker', new DatePicker(config));
+    picker = new DatePicker(config);
+    picker.on('switch', (function(_this) {
+      return function() {
+        popover.updatePosition();
+      };
+    })(this));
+    popover.add('picker', picker);
     return popover;
   };
 
@@ -8771,8 +8806,7 @@ MonthPicker = (function(_super) {
         item.cell = new Element('td', {
           parent: tr,
           html: this.formatMonth(item.date),
-          'data-index': index,
-          'data-date': item.date
+          'data-index': index
         });
         if (!this.isDayEnabled(item.date)) {
           item.cell.addClass('disabled');
@@ -8897,8 +8931,7 @@ YearPicker = (function(_super) {
         item.cell = new Element('td', {
           parent: tr,
           html: this.formatYear(item.date),
-          'data-index': index,
-          'data-date': item.date
+          'data-index': index
         });
         if (!this.isDayEnabled(item.date)) {
           item.cell.addClass('disabled');
