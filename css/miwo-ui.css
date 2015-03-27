@@ -1,6 +1,14 @@
 template {
   display: none;
 }
+.label-muted {
+  background: #eee;
+  color: #585858;
+  border: 1px solid #ccc;
+}
+.label-radius {
+  border-radius: 15px;
+}
 .btn-tool {
   -webkit-appearance: none;
   padding: 0;
@@ -25,24 +33,25 @@ template {
   font-size: 22px;
   position: relative;
   color: #cccccc;
+  outline: none;
   -webkit-transition: all 0.2s;
   -moz-transition: all 0.2s;
   -ms-transition: all 0.2s;
   -o-transition: all 0.2s;
 }
+.checkbox .checker:focus,
+.radio .checker:focus {
+  color: #428bca;
+}
 .checkbox .label-text,
 .radio .label-text {
-  float: left;
   line-height: 2;
+  display: inline;
 }
 .checkbox input,
 .radio input {
   position: absolute;
   opacity: 0;
-}
-.checkbox.focus .checker,
-.radio.focus .checker {
-  color: #428bca;
 }
 .checkbox.checked .checker,
 .radio.checked .checker {
@@ -93,6 +102,7 @@ template {
 .combo-input {
   position: relative;
   width: 100%;
+  padding-right: 20px;
 }
 .combo-input-text ul {
   margin: 0px;
@@ -160,6 +170,10 @@ template {
   color: #ffffff;
   background-color: #428bca;
 }
+.combo-dropdown-item.disabled {
+  color: #eeeeee;
+  cursor: not-allowed;
+}
 .combo-dropdown.active {
   border-color: #66afe9;
 }
@@ -170,7 +184,7 @@ template {
   border-radius: 4px 4px 0px 0px;
   border-bottom-color: #ddd !important;
 }
-.combo.active {
+.combo:focus {
   border-color: #66afe9;
   outline: none;
   -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
@@ -218,7 +232,9 @@ template {
   border: 1px solid #cccccc;
 }
 .slider .slider-knob:hover,
-.slider .slider-knob.active {
+.slider .slider-knob.active,
+.slider .slider-knob:focus {
+  outline: none;
   background: #428bca;
   border-color: #357ebd;
 }
@@ -231,10 +247,167 @@ template {
   background: #ffffff;
   border: 1px solid #cccccc;
 }
+.daterange {
+  width: 100%;
+  display: table;
+}
+.daterange .input-group-addon {
+  width: 20px;
+}
+.daterange-start {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.daterange-end {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.daterange.has-append .daterange-end {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.daterange.has-prepend .daterange-start {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.toggle {
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+  width: auto;
+}
+.toggle.disabled,
+.toggle.readonly {
+  opacity: 0.5;
+  filter: alpha(opacity=50);
+  cursor: not-allowed;
+  background: #eeeeee;
+}
+.toggle-text {
+  padding-left: 10px;
+  padding-right: 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+.toggle-handle {
+  top: -1px;
+  position: absolute;
+  border-radius: 40px;
+  background: white;
+  border: 1px solid #cccccc;
+}
+.toggle-on .toggle-text {
+  padding-right: 40px;
+}
+.toggle-on .toggle-handle {
+  right: -1px;
+}
+.toggle-off .toggle-text {
+  padding-left: 40px;
+}
+.toggle-off .toggle-handle {
+  left: -1px;
+}
+.toggle-success {
+  border-color: #4cae4c;
+  background: #5cb85c;
+  color: #ffffff;
+}
+.toggle-default {
+  border-color: #cccccc;
+  background: #ffffff;
+  color: #333333;
+}
+.toggle-info {
+  border-color: #46b8da;
+  background: #5bc0de;
+  color: #ffffff;
+}
+.toggle-warning {
+  border-color: #eea236;
+  background: #f0ad4e;
+  color: #ffffff;
+}
+.toggle-danger {
+  border-color: #d43f3a;
+  background: #d9534f;
+  color: #ffffff;
+}
+.toggle-primary {
+  border-color: #357ebd;
+  background: #428bca;
+  color: #ffffff;
+}
+.toggle.input-lg {
+  border-radius: 46px;
+}
+.toggle.input-lg .toggle-handle {
+  width: 46px;
+  height: 46px;
+}
+.toggle.input-md {
+  border-radius: 34px;
+}
+.toggle.input-md .toggle-handle {
+  width: 34px;
+  height: 34px;
+}
+.toggle.input-sm {
+  border-radius: 30px;
+}
+.toggle.input-sm .toggle-handle {
+  width: 30px;
+  height: 30px;
+}
+.dropselect-list {
+  position: relative;
+}
+.dropselect-list .items {
+  width: 100%;
+  height: 300px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+.dropselect-list .item {
+  cursor: pointer;
+  padding: 5px 8px;
+  border-bottom: 1px solid #e6e6e6;
+}
+.dropselect-list .item:hover,
+.dropselect-list .item.selected {
+  background-color: #f5f5f5;
+}
+.dropselect-list .empty {
+  position: absolute;
+  display: table;
+  top: 30px;
+  left: 0px;
+  width: 100%;
+  height: 280px;
+  padding: 10px;
+}
+.dropselect-list .empty span {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 19px;
+  color: #ccc;
+}
+.dropselect-buttons {
+  padding-top: 100px;
+}
+.dropselect-buttons .btn {
+  margin: 10px 0px;
+}
 .form-control.has-error {
   border-color: #ebccd1 !important;
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
   color: #a94442;
+}
+.form-group {
+  outline: none;
 }
 .form-group .help-block.has-error {
   color: #a94442;
@@ -242,18 +415,16 @@ template {
 .form-group.input-fill input {
   width: 100%;
 }
+.form-composite > .row {
+  margin-right: 0px;
+}
 .form-horizontal .radio,
 .form-horizontal .checkbox {
-  margin-bottom: 15px;
   padding-top: 0px;
 }
 .form-horizontal .radio label,
 .form-horizontal .checkbox label {
   padding-left: 0px;
-}
-.form-horizontal .radio .checker,
-.form-horizontal .checkbox .checker {
-  margin-left: -4px;
 }
 .form-horizontal .control-label-required {
   position: absolute;
@@ -264,12 +435,18 @@ template {
 .form-horizontal .radio-inline {
   margin-left: -15px;
 }
+.form-horizontal .form-actions button {
+  margin-right: 12px;
+}
 .form-inline .form-group {
   padding-right: 5px;
   margin-bottom: 5px;
 }
 .form-inline .form-group .control-label {
   display: none;
+}
+.form-inline .form-group:last-child {
+  padding-right: 0;
 }
 .input-group-addon-tooltip {
   background: transparent;
@@ -342,6 +519,39 @@ template {
     z-index: 0;
   }
 }
+.tabs-fit {
+  height: 100%;
+  position: relative;
+}
+.tabs-fit .tab-content {
+  position: absolute;
+  bottom: 0px;
+  top: 42px;
+  left: 0px;
+  right: 0px;
+}
+.tabs-fit .tab-pane {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+}
+.tabs-layout {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+}
+.tabs-layout .nav-tabs {
+  margin-right: 24px;
+  margin-left: 24px;
+}
+.tabs-layout .tab-pane > .pane-ct {
+  padding-right: 24px;
+  padding-left: 24px;
+}
 /* Grids */
 .grid {
   width: 100%;
@@ -382,6 +592,10 @@ template {
 }
 .grid .grid-headers tr th {
   border-bottom: 1px solid #dddddd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
 }
 .grid .checkbox {
   margin-top: -6px;
@@ -393,7 +607,20 @@ template {
 .grid .checkbox label {
   padding-left: 0px;
 }
-.grid-select-row .grid-rows tr.grid-row-data {
+.grid .label {
+  padding: .3em .6em .3em;
+}
+.grid.scrollable .miwo-ct {
+  overflow: hidden !important;
+}
+.grid.scrollable .grid-main {
+  position: absolute;
+  top: 38px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
+.grid-rowclickable .grid-rows tr.grid-row-data {
   cursor: pointer;
 }
 .grid-align-top .grid-headers tr th,
@@ -404,7 +631,6 @@ template {
 .grid-align-middle .grid-rows tr td {
   vertical-align: middle;
 }
-.grid-condensed .grid-headers tr th,
 .grid-condensed .grid-rows tr td {
   padding: 5px;
 }
@@ -424,7 +650,7 @@ template {
   float: left;
 }
 .grid-operations select {
-  width: 140px;
+  width: 160px;
   float: left;
   margin-right: 10px;
 }
@@ -434,9 +660,43 @@ template {
 .grid-paginator .pagination {
   margin: 0px;
 }
+.grid-lg .grid-rows tr td {
+  height: 46px;
+}
+.scrollable-ct {
+  position: relative;
+  overflow: hidden;
+}
+.scrollable-body {
+  position: relative;
+  height: 100%;
+  overflow: hidden !important;
+}
+.scrollable-slider {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  width: 10px;
+  cursor: pointer;
+}
+.scrollable-knob {
+  position: relative;
+  background: #333333;
+  margin: 0px 2px;
+  width: 7px;
+  height: 50px;
+  opacity: 0.7;
+  border-radius: 3px;
+  border: 1px solid #303030;
+}
+.scrollable-knob:hover {
+  opacity: 1.0;
+}
 .window {
   position: absolute;
   margin-top: 0px;
+  outline: none;
 }
 .window-tools {
   float: right;
@@ -446,6 +706,10 @@ template {
   float: left;
   cursor: pointer;
   margin-left: 10px;
+}
+.pager-info {
+  margin: 0px;
+  line-height: 32px;
 }
 .colorpicker {
   position: relative;
@@ -515,12 +779,13 @@ template {
 }
 .datepicker table {
   width: 100%;
-  border-spacing: 2px;
-  border-collapse: separate;
+  border-spacing: 0;
+  border-collapse: collapse;
 }
 .datepicker table td,
 .datepicker table th {
   text-align: center;
+  padding: 3px !important;
   cursor: pointer;
   border-radius: 4px;
 }
@@ -533,8 +798,26 @@ template {
 .datepicker table td.inactive {
   color: #cccccc;
 }
-.datepicker table td.focus {
+.datepicker table td.range-item {
   background: #eeeeee;
+  border-radius: 0;
+}
+.datepicker table td.range-start {
+  background: #777777;
+  border-radius: 4px;
+  color: white;
+}
+.datepicker table td.range-end {
+  background: #777777;
+  border-radius: 4px;
+  color: white;
+}
+.datepicker table td.focus {
+  background: #d5d5d5;
+}
+.datepicker table td.today {
+  border: 1px solid #428bca;
+  border-radius: 0;
 }
 .datepicker table td.disabled {
   color: #cccccc;
@@ -544,9 +827,6 @@ template {
 .datepicker table td.selected {
   background: #428bca;
   color: #ffffff;
-}
-.datepicker table td.today {
-  border: 1px solid #428bca;
 }
 .datepicker .switch {
   text-align: center;

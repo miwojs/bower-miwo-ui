@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var BehaviorManager, CheckSelector, DialogFactory, FormRendererFactory, HorizontalRenderer, InlineRenderer, MiwoUiExtension, Notificator, PickerManager, PopoverBehavior, PopoverManager, RowSelector, SelectorFactory, TabsBehavior, TooltipBehavior, TooltipManager, WindowManager,
+var BehaviorManager, CheckSelector, DialogFactory, DropdownManager, FormRendererFactory, HorizontalRenderer, InlineRenderer, MiwoUiExtension, Notificator, PickerManager, PopoverBehavior, PopoverManager, RowSelector, SelectorFactory, TabsBehavior, TooltipBehavior, TooltipManager, WindowManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -33,7 +33,9 @@ RowSelector = require('./selection/RowSelector');
 
 Notificator = require('./notify/Notificator');
 
-PickerManager = require('./picker/Manager');
+PickerManager = require('./picker/PickerManager');
+
+DropdownManager = require('./dropdown/DropdownManager');
 
 MiwoUiExtension = (function(_super) {
   __extends(MiwoUiExtension, _super);
@@ -65,6 +67,7 @@ MiwoUiExtension = (function(_super) {
         service.register('inline', InlineRenderer);
       };
     })(this));
+    injector.define('dropdownMgr', DropdownManager).setGlobal();
     injector.define('tooltip', TooltipManager).setGlobal();
     injector.define('popover', PopoverManager).setGlobal();
     injector.define('behavior', BehaviorManager).setGlobal().setup((function(_this) {
@@ -105,11 +108,6 @@ MiwoUiExtension = (function(_super) {
         });
       };
     })(this));
-    injector.update('translator').setup((function(_this) {
-      return function(service) {
-        service.setTranslates('en', 'miwo', require('./translates'));
-      };
-    })(this));
   };
 
   return MiwoUiExtension;
@@ -119,7 +117,7 @@ MiwoUiExtension = (function(_super) {
 module.exports = MiwoUiExtension;
 
 
-},{"./behaviors/BehaviorManager":2,"./behaviors/Popover":3,"./behaviors/Tabs":4,"./behaviors/Tooltip":5,"./form/render/FormRendererFactory":38,"./form/render/HorizontalRenderer":39,"./form/render/InlineRenderer":40,"./notify/Notificator":71,"./picker/Manager":77,"./selection/CheckSelector":87,"./selection/RowSelector":88,"./selection/SelectorFactory":90,"./tip/PopoverManager":98,"./tip/TooltipManager":100,"./translates":102,"./window/DialogFactory":109,"./window/WindowManager":112}],2:[function(require,module,exports){
+},{"./behaviors/BehaviorManager":2,"./behaviors/Popover":3,"./behaviors/Tabs":4,"./behaviors/Tooltip":5,"./dropdown/DropdownManager":15,"./form/render/FormRendererFactory":46,"./form/render/HorizontalRenderer":47,"./form/render/InlineRenderer":48,"./notify/Notificator":85,"./picker/PickerManager":99,"./selection/CheckSelector":108,"./selection/RowSelector":109,"./selection/SelectorFactory":111,"./tip/PopoverManager":119,"./tip/TooltipManager":121,"./window/DialogFactory":130,"./window/WindowManager":133}],2:[function(require,module,exports){
 var BehaviorManager;
 
 BehaviorManager = (function() {
@@ -251,6 +249,10 @@ var Button,
 Button = (function(_super) {
   __extends(Button, _super);
 
+  function Button() {
+    return Button.__super__.constructor.apply(this, arguments);
+  }
+
   Button.defaultIconClsPrefix = 'glyphicon-';
 
   Button.defaultIconClsBase = 'glyphicon';
@@ -259,13 +261,17 @@ Button = (function(_super) {
 
   Button.prototype.xtype = "button";
 
+  Button.prototype.el = 'button';
+
+  Button.prototype.baseCls = 'btn';
+
   Button.prototype.handler = null;
 
-  Button.prototype.text = "";
+  Button.prototype.text = '';
 
-  Button.prototype.size = "";
+  Button.prototype.size = '';
 
-  Button.prototype.type = "default";
+  Button.prototype.type = 'default';
 
   Button.prototype.disabled = false;
 
@@ -277,20 +283,17 @@ Button = (function(_super) {
 
   Button.prototype.tooltip = null;
 
+  Button.prototype.title = null;
+
   Button.prototype.icon = null;
 
   Button.prototype.textEl = null;
 
   Button.prototype.iconEl = null;
 
-  function Button(config) {
-    this.el = "button";
-    this.baseCls = "btn";
-    Button.__super__.constructor.call(this, config);
-  }
-
   Button.prototype.setDisabled = function(disabled, silent) {
     this.el.toggleClass('disabled', disabled);
+    this.el.set('tabindex', -disabled);
     this.disabled = disabled;
     if (!silent) {
       if (disabled) {
@@ -304,15 +307,13 @@ Button = (function(_super) {
   Button.prototype.setText = function(text) {
     this.text = text;
     if (this.textEl) {
-      this.textEl.set("html", " " + this.renderText() + " ");
+      this.textEl.set("html", (this.icon ? ' ' + this.text : this.text));
     }
   };
 
   Button.prototype.setIcon = function(cls, silent) {
-    if (this.iconEl) {
-      if (this.icon) {
-        this.iconEl.removeClass(Button.defaultIconClsPrefix + this.icon);
-      }
+    if (this.iconEl && this.icon) {
+      this.iconEl.removeClass(Button.defaultIconClsPrefix + this.icon);
     }
     this.icon = cls;
     if (this.iconEl) {
@@ -333,6 +334,16 @@ Button = (function(_super) {
       this.el.addClass(this.getBaseCls(size));
     }
     this.size = size;
+  };
+
+  Button.prototype.setType = function(type) {
+    if (this.type) {
+      this.el.removeClass(this.getBaseCls(this.type));
+    }
+    if (type) {
+      this.el.addClass(this.getBaseCls(type));
+    }
+    this.type = type;
   };
 
   Button.prototype.setActive = function(active, silent) {
@@ -366,18 +377,10 @@ Button = (function(_super) {
       this.handler(this, e);
     } else if (Type.isString(this.handler)) {
       if (this.handler.indexOf('#') === 0) {
-        document.location.hash = this.handler;
+        miwo.redirect(this.handler);
       } else {
         document.location = this.handler;
       }
-    }
-  };
-
-  Button.prototype.renderText = function() {
-    if (this.icon) {
-      return ' ' + this.text;
-    } else {
-      return this.text;
     }
   };
 
@@ -394,17 +397,21 @@ Button = (function(_super) {
     if (this.disabled) {
       this.el.addClass('disabled');
     }
-    if (this.tooltip) {
-      this.el.set("title", this.tooltip);
+    if (this.disabled) {
+      this.el.set('tabindex', -1);
+    }
+    if (this.tooltip || this.title) {
+      this.el.set("title", this.tooltip || this.title);
     }
     this.el.on("click", this.bound("onClick"));
+    this.el.on("keyup", this.bound("onKeyup"));
     this.iconEl = new Element("i", {
       parent: this.el,
       cls: Button.defaultIconClsBase
     });
     this.textEl = new Element("span", {
       parent: this.el,
-      html: this.renderText()
+      html: (this.icon ? ' ' + this.text : this.text)
     });
     this.iconEl.addClass(Button.defaultIconClsPrefix + this.icon);
     if (!this.icon) {
@@ -427,6 +434,12 @@ Button = (function(_super) {
     }
     this.emit('click', this, e);
     this.click(e);
+  };
+
+  Button.prototype.onKeyup = function(e) {
+    if (e.key === 'enter') {
+      this.onClick(e);
+    }
   };
 
   return Button;
@@ -462,11 +475,9 @@ ButtonGroup = (function(_super) {
 
   ButtonGroup.prototype.role = 'group';
 
-  ButtonGroup.prototype.beforeInit = function() {
-    ButtonGroup.__super__.beforeInit.call(this);
-    this.layout = "auto";
-    this.baseCls = "btn-group";
-  };
+  ButtonGroup.prototype.layout = 'auto';
+
+  ButtonGroup.prototype.baseCls = 'btn-group';
 
   ButtonGroup.prototype.validateChildComponent = function(component) {
     if (!component.isButton) {
@@ -576,11 +587,6 @@ DropdownButton = (function(_super) {
 
   DropdownButton.prototype.dropdown = null;
 
-  DropdownButton.prototype.afterInit = function() {
-    DropdownButton.__super__.afterInit.apply(this, arguments);
-    document.on('click', this.bound('onBodyClick'));
-  };
-
   DropdownButton.prototype.afterRender = function() {
     DropdownButton.__super__.afterRender.apply(this, arguments);
     this.el.set('aria-haspopup', true);
@@ -593,64 +599,28 @@ DropdownButton = (function(_super) {
         target: this.el
       });
       this.dropdown.el.set('aria-labelledby', this.id);
-      this.dropdown.on('show', (function(_this) {
-        return function(dropdown) {
-          return DropdownButton.dropdown = dropdown;
-        };
-      })(this));
-      this.dropdown.on('hide', (function(_this) {
-        return function(dropdown) {
-          return DropdownButton.dropdown = null;
-        };
-      })(this));
     }
     return this.dropdown;
   };
 
-  DropdownButton.prototype.addItem = function(name, text, handler) {
-    return this.getDropdown().addItem(name, {
-      text: text,
-      handler: handler
+  DropdownButton.prototype.doRender = function() {
+    var caret;
+    DropdownButton.__super__.doRender.apply(this, arguments);
+    caret = new Element('span', {
+      cls: 'caret'
     });
+    caret.inject(this.getContentEl());
   };
 
-  DropdownButton.prototype.addDivider = function() {
-    return this.getDropdown().addDivider();
-  };
-
-  DropdownButton.prototype.renderText = function() {
-    var text;
-    text = DropdownButton.__super__.renderText.call(this);
-    if (text) {
-      text += ' ';
-    }
-    text += '<span class="caret"></span>';
-    return text;
-  };
-
-  DropdownButton.prototype.click = function(e) {
-    if (DropdownButton.dropdown && DropdownButton.dropdown !== this.dropdown) {
-      DropdownButton.dropdown.hide();
-    }
+  DropdownButton.prototype.click = function() {
     this.getDropdown().toggle();
-  };
-
-  DropdownButton.prototype.onBodyClick = function(e) {
-    var dropdown;
-    if (this.dropdown) {
-      dropdown = e.target.getParent('#' + this.dropdown.id);
-      if (!dropdown) {
-        this.dropdown.hide();
-      }
-    }
   };
 
   DropdownButton.prototype.doDestroy = function() {
     if (this.dropdown) {
       this.dropdown.destroy();
     }
-    document.un('click', this.bound('onBodyClick'));
-    return DropdownButton.__super__.doDestroy.call(this);
+    return DropdownButton.__super__.doDestroy.apply(this, arguments);
   };
 
   return DropdownButton;
@@ -660,7 +630,7 @@ DropdownButton = (function(_super) {
 module.exports = DropdownButton;
 
 
-},{"../dropdown/List":13,"./Button":6}],9:[function(require,module,exports){
+},{"../dropdown/List":17,"./Button":6}],9:[function(require,module,exports){
 var Button, ToolButton,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -785,6 +755,499 @@ module.exports = {
 
 
 },{"./Button":6,"./ButtonGroup":7,"./DropdownButton":8,"./ToolButton":9}],11:[function(require,module,exports){
+var Drag,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+Drag = (function(_super) {
+  __extends(Drag, _super);
+
+  Drag.prototype.snap = 6;
+
+  Drag.prototype.unit = 'px';
+
+  Drag.prototype.grid = null;
+
+  Drag.prototype.style = true;
+
+  Drag.prototype.limits = null;
+
+  Drag.prototype.handle = false;
+
+  Drag.prototype.invert = false;
+
+  Drag.prototype.preventDefault = false;
+
+  Drag.prototype.stopPropagation = false;
+
+  Drag.prototype.modifiers = null;
+
+  Drag.prototype.mouse = null;
+
+  Drag.prototype.value = null;
+
+  Drag.prototype.handles = null;
+
+  Drag.prototype.document = null;
+
+  Drag.prototype.element = null;
+
+  function Drag(element, config) {
+    var type;
+    this.element = element;
+    Drag.__super__.constructor.call(this, config);
+    this.element = document.id(this.element);
+    this.document = this.element.getDocument();
+    if (!this.modifiers) {
+      this.modifiers = {
+        x: 'left',
+        y: 'top'
+      };
+    }
+    type = typeOf(this.handle);
+    this.handles = (type === 'array' || type === 'collection' ? $$(this.handle) : document.id(this.handle)) || this.element;
+    if (!this.limits) {
+      this.limits = {
+        x: [],
+        y: []
+      };
+    }
+    this.mouse = {
+      'now': {},
+      'pos': {}
+    };
+    this.value = {
+      'start': {},
+      'now': {}
+    };
+    if (__indexOf.call(document, 'ondragstart') >= 0 && !(__indexOf.call(window, 'FileReader') >= 0) && !Drag.ondragstartFixed) {
+      document.ondragstart = Function.from(false);
+      Drag.ondragstartFixed = true;
+    }
+    if (this.grid === null || typeOf(this.grid) === 'number') {
+      this.grid = {
+        x: this.grid,
+        y: this.grid
+      };
+    }
+    this.attach();
+    return;
+  }
+
+  Drag.prototype.attach = function() {
+    this.handles.on('mousedown', this.bound('start'));
+    return this;
+  };
+
+  Drag.prototype.detach = function() {
+    this.handles.un('mousedown', this.bound('start'));
+    return this;
+  };
+
+  Drag.prototype.start = function(event) {
+    var coordinates, name, property, style, _ref;
+    if (event.rightClick) {
+      return;
+    }
+    if (this.preventDefault) {
+      event.preventDefault();
+    }
+    if (this.stopPropagation) {
+      event.stopPropagation();
+    }
+    this.mouse.start = event.page;
+    this.emit('beforestart', this.element);
+    _ref = this.modifiers;
+    for (name in _ref) {
+      property = _ref[name];
+      if (!property) {
+        continue;
+      }
+      style = this.element.getStyle(property);
+      if (style && !style.match(/px$/)) {
+        if (!coordinates) {
+          coordinates = this.element.getCoordinates(this.element.getOffsetParent());
+        }
+        style = coordinates[property];
+      }
+      if (this.style) {
+        this.value.now[name] = (style || 0).toInt();
+      } else {
+        this.value.now[name] = this.element[property];
+      }
+      if (this.invert) {
+        this.value.now[name] *= -1;
+      }
+      this.mouse.pos[name] = event.page[name] - this.value.now[name];
+    }
+    this.document.on('mousemove', this.bound('check'));
+    this.document.on('mouseup', this.bound('cancel'));
+  };
+
+  Drag.prototype.check = function(event) {
+    var distance;
+    if (this.preventDefault) {
+      event.preventDefault();
+    }
+    distance = Math.round(Math.sqrt(Math.pow(event.page.x - this.mouse.start.x, 2) + Math.pow(event.page.y - this.mouse.start.y, 2)));
+    if (distance > this.snap) {
+      this.cancel();
+      this.document.on('mousemove', this.bound('drag'));
+      this.document.on('mouseup', this.bound('stop'));
+      this.emit('start', this.element, event);
+      this.emit('snap', this.element);
+    }
+  };
+
+  Drag.prototype.drag = function(event) {
+    var name, property, _ref;
+    if (this.preventDefault) {
+      event.preventDefault();
+    }
+    this.mouse.now = event.page;
+    _ref = this.modifiers;
+    for (name in _ref) {
+      property = _ref[name];
+      if (!property) {
+        continue;
+      }
+      this.value.now[name] = this.mouse.now[name] - this.mouse.pos[name];
+      if (this.invert) {
+        this.value.now[name] *= -1;
+      }
+      if (this.limits[name]) {
+        if ((this.limits[name][1] || this.limits[name][1] === 0) && this.value.now[name] > this.limits[name][1]) {
+          this.value.now[name] = this.limits[name][1];
+        } else if ((this.limits[name][0] || this.limits[name][0] === 0) && this.value.now[name] < this.limits[name][0]) {
+          this.value.now[name] = this.limits[name][0];
+        }
+      }
+      if (this.grid && this.grid[name]) {
+        this.value.now[name] -= (this.value.now[name] - (this.limits[name][0] || 0)) % this.grid[name];
+      }
+      if (this.style) {
+        this.element.setStyle(property, this.value.now[name] + this.unit);
+      } else {
+        this.element[property] = this.value.now[name];
+      }
+    }
+    this.emit('drag', this.element, event);
+  };
+
+  Drag.prototype.cancel = function(event) {
+    this.document.un('mousemove', this.bound('check'));
+    this.document.un('mouseup', this.bound('cancel'));
+    if (event) {
+      this.emit('cancel', this.element);
+    }
+  };
+
+  Drag.prototype.stop = function(event) {
+    this.document.un('mousemove', this.bound('drag'));
+    this.document.un('mouseup', this.bound('stop'));
+    if (event) {
+      this.emit('complete', this.element, event);
+    }
+  };
+
+  return Drag;
+
+})(Miwo.Object);
+
+module.exports = Drag;
+
+
+},{}],12:[function(require,module,exports){
+var Drag, Slider,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Drag = require('./Drag');
+
+Slider = (function(_super) {
+  __extends(Slider, _super);
+
+  Slider.prototype.initialStep = 0;
+
+  Slider.prototype.snap = false;
+
+  Slider.prototype.offset = 0;
+
+  Slider.prototype.range = false;
+
+  Slider.prototype.wheel = false;
+
+  Slider.prototype.steps = 100;
+
+  Slider.prototype.mode = 'horizontal';
+
+  Slider.prototype.axis = null;
+
+  Slider.prototype.property = null;
+
+  Slider.prototype.offsetProperty = null;
+
+  Slider.prototype.full = 0;
+
+  function Slider(element, knob, config) {
+    var limits, modifiers;
+    Slider.__super__.constructor.call(this, config);
+    this.element = document.id(element);
+    this.knob = document.id(knob);
+    this.step = this.initialStep ? this.initialStep : (this.range ? this.range[0] : 0);
+    this.previousChange = this.previousEnd = this.step;
+    switch (this.mode) {
+      case 'vertical':
+        this.axis = 'y';
+        this.property = 'top';
+        this.offsetProperty = 'offsetHeight';
+        limits = {
+          x: [0, 0],
+          y: []
+        };
+        modifiers = {
+          x: false,
+          y: 'top'
+        };
+        break;
+      case 'horizontal':
+        this.axis = 'x';
+        this.property = 'left';
+        this.offsetProperty = 'offsetWidth';
+        limits = {
+          x: [],
+          y: [0, 0]
+        };
+        modifiers = {
+          x: 'left',
+          y: false
+        };
+    }
+    this.drag = new Drag(this.knob, {
+      snap: 0,
+      limits: limits,
+      modifiers: modifiers
+    });
+    this.drag.on('drag', (function(_this) {
+      return function() {
+        _this.draggedKnob();
+      };
+    })(this));
+    this.drag.on('start', (function(_this) {
+      return function() {
+        _this.draggedKnob();
+      };
+    })(this));
+    this.drag.on('beforestart', (function(_this) {
+      return function() {
+        _this.isDragging = true;
+      };
+    })(this));
+    this.drag.on('cancel', (function(_this) {
+      return function() {
+        _this.isDragging = false;
+      };
+    })(this));
+    this.drag.on('complete', (function(_this) {
+      return function() {
+        _this.isDragging = false;
+        _this.draggedKnob();
+        _this.end();
+      };
+    })(this));
+    this.knob.setStyle(this.property, -this.offset);
+    this.setSliderDimensions();
+    this.setRange(this.range, null, true);
+    if (this.snap) {
+      this.setSnap();
+    }
+    if (this.initialStep !== null) {
+      this.setStep(this.initialStep, true);
+    }
+    this.attach();
+    return;
+  }
+
+  Slider.prototype.onTick = function(position) {
+    this.setKnobPosition(position);
+  };
+
+  Slider.prototype.attach = function() {
+    this.element.on('mousedown', this.bound('clickedElement'));
+    if (this.wheel) {
+      this.element.on('mousewheel', this.bound('scrolledElement'));
+    }
+    this.drag.attach();
+    return this;
+  };
+
+  Slider.prototype.detach = function() {
+    this.element.un('mousedown', this.bound('clickedElement'));
+    this.element.un('mousewheel', this.bound('scrolledElement'));
+    this.drag.detach();
+    return this;
+  };
+
+  Slider.prototype.updateSize = function() {
+    this.setSliderDimensions();
+    this.setKnobPosition(this.toPosition(this.step));
+    this.drag.limits[this.axis] = [-this.offset, this.full - this.offset];
+    if (this.snap) {
+      this.setSnap();
+    }
+    return this;
+  };
+
+  Slider.prototype.setSnap = function() {
+    this.drag.grid[this.axis] = Math.ceil(this.stepWidth);
+    this.drag.limits[this.axis][1] = this.element[this.offsetProperty];
+    return this;
+  };
+
+  Slider.prototype.setKnobPosition = function(position) {
+    if (this.snap) {
+      position = this.toPosition(this.step);
+    }
+    this.knob.setStyle(this.property, position);
+    return this;
+  };
+
+  Slider.prototype.setSliderDimensions = function() {
+    this.full = this.element[this.offsetProperty] - this.knob[this.offsetProperty] + this.offset * 2;
+    this.half = this.knob[this.offsetProperty] / 2;
+    return this;
+  };
+
+  Slider.prototype.setStep = function(step, silently) {
+    if (!(this.range > 0 ^ step < this.min)) {
+      step = this.min;
+    }
+    if (!(this.range > 0 ^ step > this.max)) {
+      step = this.max;
+    }
+    this.step = step.round(this.modulus.decimalLength);
+    if (silently) {
+      this.checkStep();
+      this.setKnobPosition(this.toPosition(this.step));
+    } else {
+      this.checkStep();
+      this.emit('tick', this.toPosition(this.step));
+      this.emit('move');
+      this.end();
+    }
+    return this;
+  };
+
+  Slider.prototype.setRange = function(range, pos, silently) {
+    this.min = range ? range[0] : 0;
+    this.max = range ? range[1] : this.steps;
+    this.range = this.max - this.min;
+    this.steps = this.steps || this.full;
+    this.stepSize = Math.abs(this.range) / this.steps;
+    this.stepWidth = this.stepSize * this.full / Math.abs(this.range);
+    this.setModulus();
+    if (range) {
+      this.setStep(Array.pick([pos, this.step]).limit(this.min, this.max), silently);
+    }
+    return this;
+  };
+
+  Slider.prototype.setModulus = function() {
+    var decimals, modulus;
+    decimals = ((this.stepSize + '').split('.')[1] || []).length;
+    modulus = 1 + '';
+    while (decimals--) {
+      modulus += '0';
+    }
+    this.modulus = {
+      multiplier: modulus.toInt(10),
+      decimalLength: modulus.length - 1
+    };
+  };
+
+  Slider.prototype.clickedElement = function(event) {
+    var dir, position;
+    if (this.isDragging || event.target === this.knob) {
+      return;
+    }
+    dir = this.range < 0 ? -1 : 1;
+    position = event.page[this.axis] - this.element.getPosition()[this.axis] - this.half;
+    position = position.limit(-this.offset, this.full - this.offset);
+    this.step = (this.min + dir * this.toStep(position)).round(this.modulus.decimalLength);
+    this.setKnobPosition(this.toPosition(this.step));
+    this.checkStep();
+    this.emit('tick', position);
+    this.emit('move');
+    this.end();
+  };
+
+  Slider.prototype.scrolledElement = function(event) {
+    var mode;
+    mode = this.mode === 'horizontal' ? event.wheel < 0 : event.wheel > 0;
+    this.setStep(this.step + (mode ? -1 : 1) * this.stepSize);
+    event.stop();
+  };
+
+  Slider.prototype.draggedKnob = function() {
+    var dir, position;
+    dir = this.range < 0 ? -1 : 1;
+    position = this.drag.value.now[this.axis];
+    position = position.limit(-this.offset, this.full - this.offset);
+    this.step = (this.min + dir * this.toStep(position)).round(this.modulus.decimalLength);
+    this.checkStep();
+    this.emit('move');
+  };
+
+  Slider.prototype.checkStep = function() {
+    var step;
+    step = this.step;
+    if (this.previousChange !== step) {
+      this.previousChange = step;
+      this.emit('change', step);
+    }
+    return this;
+  };
+
+  Slider.prototype.end = function() {
+    var step;
+    step = this.step;
+    if (this.previousEnd !== step) {
+      this.previousEnd = step;
+      this.emit('complete', step + '');
+    }
+    return this;
+  };
+
+  Slider.prototype.toStep = function(position) {
+    var step;
+    step = (position + this.offset) * this.stepSize / this.full * this.steps;
+    if (this.steps) {
+      return (step - (step * this.modulus.multiplier % this.stepSize * this.modulus.multiplier / this.modulus.multiplier)).round(this.modulus.decimalLength);
+    } else {
+      return step;
+    }
+  };
+
+  Slider.prototype.toPosition = function(step) {
+    return this.full * Math.abs(this.min - step) / this.steps * this.stepSize - this.offset || 0;
+  };
+
+  return Slider;
+
+})(Miwo.Object);
+
+module.exports = Slider;
+
+
+},{"./Drag":11}],13:[function(require,module,exports){
+module.exports = {
+  Drag: require('./Drag'),
+  Slider: require('./Slider')
+};
+
+
+},{"./Drag":11,"./Slider":12}],14:[function(require,module,exports){
 var DropdownDivider,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -811,7 +1274,76 @@ DropdownDivider = (function(_super) {
 module.exports = DropdownDivider;
 
 
-},{}],12:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
+var DropdownManager,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+DropdownManager = (function(_super) {
+  __extends(DropdownManager, _super);
+
+  DropdownManager.prototype.active = null;
+
+  function DropdownManager() {
+    DropdownManager.__super__.constructor.apply(this, arguments);
+    document.on('mousedown', this.bound('onBodyClick'));
+    document.on('keyup', this.bound('onBodyKeyup'));
+    return;
+  }
+
+  DropdownManager.prototype.register = function(component) {
+    this.mon(component, 'show', 'onShow');
+    this.mon(component, 'hide', 'onHide');
+  };
+
+  DropdownManager.prototype.unregister = function(component) {
+    this.mun(component, 'show', 'onShow');
+    this.mun(component, 'hide', 'onHide');
+  };
+
+  DropdownManager.prototype.onShow = function(component) {
+    if (this.active) {
+      this.active.hide();
+    }
+    this.active = component;
+  };
+
+  DropdownManager.prototype.onHide = function(component) {
+    this.active = null;
+  };
+
+  DropdownManager.prototype.onBodyClick = function(e) {
+    if (this.active && this.isOutClick(e.target, this.active)) {
+      this.active.hide();
+    }
+  };
+
+  DropdownManager.prototype.onBodyKeyup = function(e) {
+    if (this.active && e.key === 'esc') {
+      e.stop();
+      this.active.hide();
+    }
+  };
+
+  DropdownManager.prototype.isOutClick = function(target, active) {
+    var parent;
+    parent = target;
+    while (parent = parent.getParent()) {
+      if (parent === active.el || parent === active.target) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  return DropdownManager;
+
+})(Miwo.Object);
+
+module.exports = DropdownManager;
+
+
+},{}],16:[function(require,module,exports){
 var DropdownItem,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -889,7 +1421,7 @@ DropdownItem = (function(_super) {
 module.exports = DropdownItem;
 
 
-},{}],13:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var Divider, DropdownList, Item,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -917,8 +1449,11 @@ DropdownList = (function(_super) {
 
   DropdownList.prototype.role = 'menu';
 
+  DropdownList.prototype.zIndexManage = true;
+
   DropdownList.prototype.afterInit = function() {
     DropdownList.__super__.afterInit.apply(this, arguments);
+    miwo.dropdownMgr.register(this);
     this.renderTo = miwo.body;
   };
 
@@ -930,12 +1465,13 @@ DropdownList = (function(_super) {
     return this.add(new Divider());
   };
 
-  DropdownList.prototype.show = function() {
+  DropdownList.prototype.doShow = function() {
     var pos;
-    DropdownList.__super__.show.call(this);
+    DropdownList.__super__.doShow.apply(this, arguments);
     pos = this.target.getPosition();
     pos.y += this.target.getSize().y - 3;
     this.setPosition(pos);
+    this.toFront();
   };
 
   DropdownList.prototype.toggle = function() {
@@ -947,8 +1483,14 @@ DropdownList = (function(_super) {
   };
 
   DropdownList.prototype.doHide = function() {
-    DropdownList.__super__.doHide.call(this);
+    DropdownList.__super__.doHide.apply(this, arguments);
     this.resetRendered(true);
+    this.toBack();
+  };
+
+  DropdownList.prototype.doDestroy = function() {
+    miwo.dropdownMgr.unregister(this);
+    return DropdownList.__super__.doDestroy.apply(this, arguments);
   };
 
   return DropdownList;
@@ -958,7 +1500,7 @@ DropdownList = (function(_super) {
 module.exports = DropdownList;
 
 
-},{"./Divider":11,"./Item":12}],14:[function(require,module,exports){
+},{"./Divider":14,"./Item":16}],18:[function(require,module,exports){
 module.exports = {
   Divider: require('./Divider'),
   Item: require('./Item'),
@@ -966,7 +1508,7 @@ module.exports = {
 };
 
 
-},{"./Divider":11,"./Item":12,"./List":13}],15:[function(require,module,exports){
+},{"./Divider":14,"./Item":16,"./List":17}],19:[function(require,module,exports){
 var Condition, Rule, Rules, Validators,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1190,7 +1732,7 @@ Rules = (function() {
 module.exports = Rules;
 
 
-},{"./Validators":16}],16:[function(require,module,exports){
+},{"./Validators":20}],20:[function(require,module,exports){
 var Validators;
 
 Validators = {
@@ -1270,7 +1812,7 @@ Validators = {
 module.exports = Validators;
 
 
-},{}],17:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var BaseContainer,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1289,6 +1831,8 @@ BaseContainer = (function(_super) {
   BaseContainer.prototype.isFormContainer = true;
 
   BaseContainer.prototype.disabled = false;
+
+  BaseContainer.prototype.readonly = false;
 
   BaseContainer.prototype.wasDirty = false;
 
@@ -1336,6 +1880,9 @@ BaseContainer = (function(_super) {
     if (this.disabled) {
       component.setDisabled(this.disabled);
     }
+    if (this.readonly) {
+      component.setReadonly(this.readonly);
+    }
   };
 
   BaseContainer.prototype.removedComponent = function(component) {
@@ -1353,7 +1900,18 @@ BaseContainer = (function(_super) {
   BaseContainer.prototype.setDisabled = function(disabled) {
     this.disabled = disabled;
     this.getComponents().each(function(component) {
-      component.setDisabled(disabled);
+      if (component.setDisabled) {
+        component.setDisabled(disabled);
+      }
+    });
+  };
+
+  BaseContainer.prototype.setReadonly = function(readonly) {
+    this.readonly = readonly;
+    this.getComponents().each(function(component) {
+      if (component.setReadonly) {
+        component.setReadonly(readonly);
+      }
     });
   };
 
@@ -1366,7 +1924,7 @@ BaseContainer = (function(_super) {
     _ref = this.controls;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       control = _ref[_i];
-      if (control.getName() === name) {
+      if (control.name === name) {
         return control;
       }
     }
@@ -1483,7 +2041,7 @@ BaseContainer = (function(_super) {
     }
   };
 
-  BaseContainer.prototype.setDefaults = function(values, onlyset) {
+  BaseContainer.prototype.setDefaults = function(values, onlySet) {
     var control, name, _i, _len, _ref;
     _ref = this.controls;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -1492,7 +2050,7 @@ BaseContainer = (function(_super) {
       if (values) {
         if (values.hasOwnProperty(name)) {
           control.setDefaultValue(values[name]);
-        } else if (!onlyset) {
+        } else if (!onlySet) {
           control.setDefaultValue();
         }
       } else {
@@ -1600,7 +2158,7 @@ BaseContainer = (function(_super) {
 module.exports = BaseContainer;
 
 
-},{}],18:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 var BaseContainer, Fieldset,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1643,7 +2201,7 @@ BaseContainer.registerControl('fieldset', Fieldset);
 module.exports = Fieldset;
 
 
-},{"./BaseContainer":17}],19:[function(require,module,exports){
+},{"./BaseContainer":21}],23:[function(require,module,exports){
 var BaseContainer, Form,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1671,6 +2229,8 @@ Form = (function(_super) {
 
   Form.prototype.rendererOptions = null;
 
+  Form.prototype.preventAutoLogin = false;
+
   Form.prototype.beforeInit = function() {
     Form.__super__.beforeInit.apply(this, arguments);
     this.form = this;
@@ -1686,6 +2246,13 @@ Form = (function(_super) {
         return true;
       };
     })(this));
+  };
+
+  Form.prototype.reset = function(btn, silent) {
+    Form.__super__.reset.apply(this, arguments);
+    if (!silent) {
+      this.emit('reset', this, btn);
+    }
   };
 
   Form.prototype.addedComponentDeep = function(component) {
@@ -1717,24 +2284,26 @@ Form = (function(_super) {
   };
 
   Form.prototype.onResetButtonClick = function(btn) {
-    this.reset();
-    this.emit('reset', this, btn);
+    this.reset(btn);
   };
 
   Form.prototype.loadRecord = function(record) {
     var values;
+    if (!record) {
+      throw new Error("Undefined record");
+    }
     this.record = record;
     values = record.getValues();
     this.setOriginals(values);
     this.setValues(values);
-    this.reset();
+    this.reset(null, true);
   };
 
   Form.prototype.unloadRecord = function() {
     this.record = null;
     this.setOriginals({}, true);
     this.setValues({});
-    this.reset();
+    this.reset(null, true);
   };
 
   Form.prototype.updateRecord = function(record) {
@@ -1767,14 +2336,14 @@ Form = (function(_super) {
     var isValid;
     this.submitBtn = btn;
     isValid = this.validate();
-    this.emit('submit', this, isValid);
     this.onSubmit();
+    this.emit('submit', this, isValid);
     if (isValid) {
-      this.emit('success', this);
       this.onSuccess();
+      this.emit('success', this);
     } else {
-      this.emit('failure', this);
       this.onFailure();
+      this.emit('failure', this);
     }
   };
 
@@ -1897,7 +2466,7 @@ Form = (function(_super) {
 module.exports = Form;
 
 
-},{"./BaseContainer":17}],20:[function(require,module,exports){
+},{"./BaseContainer":21}],24:[function(require,module,exports){
 var BaseControl, Button, Rules,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1912,6 +2481,8 @@ BaseControl = (function(_super) {
   function BaseControl() {
     return BaseControl.__super__.constructor.apply(this, arguments);
   }
+
+  BaseControl.prototype.xtype = 'control';
 
   BaseControl.prototype.isFormControl = true;
 
@@ -1989,11 +2560,6 @@ BaseControl = (function(_super) {
 
   BaseControl.prototype.submitValue = true;
 
-  BaseControl.prototype.beforeInit = function() {
-    BaseControl.__super__.beforeInit.apply(this, arguments);
-    this.xtype = 'control';
-  };
-
   BaseControl.prototype.afterInit = function() {
     var button, items, rules, _i, _len;
     BaseControl.__super__.afterInit.apply(this, arguments);
@@ -2039,18 +2605,16 @@ BaseControl = (function(_super) {
     return (val !== null && val !== undefined ? val.toString() : "");
   };
 
-  BaseControl.prototype.getLabel = function() {
-    return this.label;
-  };
-
   BaseControl.prototype.setValue = function(value) {
     this.value = value;
     this.checkChange();
+    return this;
   };
 
   BaseControl.prototype.setOriginalValue = function(value) {
     this.originalValue = value;
     this.checkDirty();
+    return this;
   };
 
   BaseControl.prototype.setDefaultValue = function(value) {
@@ -2058,11 +2622,13 @@ BaseControl = (function(_super) {
       this.defaultValue = value;
     }
     this.setValue(this.defaultValue);
+    return this;
   };
 
   BaseControl.prototype.setFocus = function() {
     BaseControl.__super__.setFocus.call(this);
     this.emit("focus", this);
+    return this;
   };
 
   BaseControl.prototype.isDisabled = function() {
@@ -2071,7 +2637,8 @@ BaseControl = (function(_super) {
 
   BaseControl.prototype.setDisabled = function(disabled) {
     this.disabled = disabled;
-    this.input.setDisabled(disabled);
+    this.input.setDisabled(this.disabled);
+    return this;
   };
 
   BaseControl.prototype.isFilled = function() {
@@ -2120,11 +2687,13 @@ BaseControl = (function(_super) {
     this.notifyErrors = false;
     this.wasInputFocused = false;
     this.cleanErrors();
+    return this;
   };
 
   BaseControl.prototype.resetOriginalValue = function() {
     this.originalValue = this.getValue();
     this.checkDirty();
+    return this;
   };
 
   BaseControl.prototype.checkChange = function() {
@@ -2327,7 +2896,26 @@ BaseControl = (function(_super) {
     if (this.buttonsCt) {
       button.render(this.buttonsCt);
     }
+    button.on('click', (function(_this) {
+      return function(btn, event) {
+        _this.emit('buttonclick', _this, btn, event);
+      };
+    })(this));
     this.buttons.set(name, button);
+    return button;
+  };
+
+  BaseControl.prototype.addResetButton = function() {
+    var button;
+    button = this.addButton('reset', {
+      disabled: true,
+      icon: 'remove',
+      handler: (function(_this) {
+        return function() {
+          return _this.reset();
+        };
+      })(this)
+    });
     return button;
   };
 
@@ -2347,7 +2935,7 @@ BaseControl = (function(_super) {
     labelEl.inject(ct);
     this.labeltextEl = new Element('span', {
       cls: 'control-label-text',
-      html: this.label
+      html: this.getLabel()
     });
     this.labeltextEl.inject(labelEl);
     if (this.isRequired()) {
@@ -2383,6 +2971,11 @@ BaseControl = (function(_super) {
         html: this.prepend
       });
       span.inject(ct);
+      span.on('click', (function(_this) {
+        return function(e) {
+          return _this.emit('prependclick', _this, e);
+        };
+      })(this));
     }
     input.render(ct);
     input.setDisabled(this.disabled);
@@ -2392,6 +2985,11 @@ BaseControl = (function(_super) {
         html: this.append
       });
       span.inject(ct);
+      span.on('click', (function(_this) {
+        return function(e) {
+          return _this.emit('appendclick', _this, e);
+        };
+      })(this));
     }
     if (this.buttons.length !== 0) {
       this.buttonsCt = new Element('div', {
@@ -2430,6 +3028,11 @@ BaseControl = (function(_super) {
 
   BaseControl.prototype.afterRenderControl = function() {};
 
+  BaseControl.prototype.parentShown = function(parent) {
+    BaseControl.__super__.parentShown.call(this, parent);
+    this.getInput().parentShown(parent);
+  };
+
   BaseControl.prototype.doDestroy = function() {
     if (this.input) {
       this.input.destroy();
@@ -2444,7 +3047,44 @@ BaseControl = (function(_super) {
 module.exports = BaseControl;
 
 
-},{"../../buttons/Button":6,"../Rules":15}],21:[function(require,module,exports){
+},{"../../buttons/Button":6,"../Rules":19}],25:[function(require,module,exports){
+var BaseControl, BaseInputControl,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseControl = require('./BaseControl');
+
+BaseInputControl = (function(_super) {
+  __extends(BaseInputControl, _super);
+
+  function BaseInputControl() {
+    return BaseInputControl.__super__.constructor.apply(this, arguments);
+  }
+
+  BaseInputControl.prototype.setValue = function(value) {
+    BaseInputControl.__super__.setValue.call(this, value);
+    if (this.input) {
+      this.input.setValue(value);
+    }
+    return this;
+  };
+
+  BaseInputControl.prototype.setDisabled = function(disabled) {
+    BaseInputControl.__super__.setDisabled.call(this, disabled);
+    if (this.input) {
+      this.input.setDisabled(disabled);
+    }
+    return this;
+  };
+
+  return BaseInputControl;
+
+})(BaseControl);
+
+module.exports = BaseInputControl;
+
+
+},{"./BaseControl":24}],26:[function(require,module,exports){
 var BaseControl, BaseSelectControl, Helpers,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2542,7 +3182,7 @@ BaseSelectControl = (function(_super) {
 module.exports = BaseSelectControl;
 
 
-},{"./BaseControl":20,"./Helpers":30}],22:[function(require,module,exports){
+},{"./BaseControl":24,"./Helpers":37}],27:[function(require,module,exports){
 var BaseControl, BaseTextControl, Text,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2578,9 +3218,13 @@ BaseTextControl = (function(_super) {
 
   BaseTextControl.prototype.validateOnKeyUp = false;
 
+  BaseTextControl.prototype.resetFormOnEsc = false;
+
   BaseTextControl.prototype.value = '';
 
   BaseTextControl.prototype.type = null;
+
+  BaseTextControl.prototype.inputCls = null;
 
   BaseTextControl.prototype.editable = true;
 
@@ -2601,6 +3245,9 @@ BaseTextControl = (function(_super) {
     return new Text({
       id: this.id + '-input',
       type: this.type || 'text',
+      name: 'input',
+      cls: this.inputCls,
+      inputName: this.name,
       autocomplete: this.autocomplete,
       placeholder: this.placeholder,
       readonly: this.readonly,
@@ -2613,6 +3260,7 @@ BaseTextControl = (function(_super) {
     if (this.input && !ignoreInputChange) {
       this.input.setValue(value);
     }
+    return this;
   };
 
   BaseTextControl.prototype.setDisabled = function(disabled) {
@@ -2620,6 +3268,15 @@ BaseTextControl = (function(_super) {
     if (this.input) {
       this.input.setDisabled(disabled);
     }
+    return this;
+  };
+
+  BaseTextControl.prototype.setReadonly = function(readonly) {
+    this.readonly = readonly;
+    if (this.input) {
+      this.input.setReadonly(readonly);
+    }
+    return this;
   };
 
   BaseTextControl.prototype.afterRenderControl = function() {
@@ -2654,7 +3311,9 @@ BaseTextControl = (function(_super) {
 
   BaseTextControl.prototype.onInputKeydown = function(e) {
     if (!this.editable) {
-      e.stop();
+      if (e.key.length === 1) {
+        e.preventDefault();
+      }
       return;
     }
     if (e.key.length === 1) {
@@ -2664,6 +3323,9 @@ BaseTextControl = (function(_super) {
         e.stop();
       }
     } else {
+      if (this.resetFormOnEsc && e.key === 'esc') {
+        this.getForm().reset();
+      }
       this.onSpecialkey(this, e.key, e);
       this.emit("specialkey", this, e.key, e);
     }
@@ -2704,6 +3366,7 @@ BaseTextControl = (function(_super) {
 
   BaseTextControl.prototype.onInputBlur = function(e) {
     this.validate();
+    this.emit('blur', this);
   };
 
   return BaseTextControl;
@@ -2713,7 +3376,7 @@ BaseTextControl = (function(_super) {
 module.exports = BaseTextControl;
 
 
-},{"../../input/Text":65,"./BaseControl":20}],23:[function(require,module,exports){
+},{"../../input/Text":78,"./BaseControl":24}],28:[function(require,module,exports){
 var BaseControl, ButtonGroup, ButtonGroupControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2791,7 +3454,7 @@ ButtonGroupControl = (function(_super) {
 module.exports = ButtonGroupControl;
 
 
-},{"../../buttons/ButtonGroup":7,"./BaseControl":20}],24:[function(require,module,exports){
+},{"../../buttons/ButtonGroup":7,"./BaseControl":24}],29:[function(require,module,exports){
 var Button, ButtonControl, ResetButton, SubmitButton,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2854,7 +3517,7 @@ module.exports = {
 };
 
 
-},{"../../buttons/Button":6}],25:[function(require,module,exports){
+},{"../../buttons/Button":6}],30:[function(require,module,exports){
 var BaseControl, Checkbox, CheckboxControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2929,7 +3592,7 @@ CheckboxControl = (function(_super) {
 module.exports = CheckboxControl;
 
 
-},{"../../input/Checkbox":56,"./BaseControl":20}],26:[function(require,module,exports){
+},{"../../input/Checkbox":66,"./BaseControl":24}],31:[function(require,module,exports){
 var BaseControl, CheckboxList, CheckboxListControl, Helpers,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -2997,11 +3660,6 @@ CheckboxListControl = (function(_super) {
         return _this.setValue(_this.input.getValue());
       };
     })(this));
-    this.input.on('focus', (function(_this) {
-      return function() {
-        return _this.setFocus();
-      };
-    })(this));
     this.input.on('blur', (function(_this) {
       return function() {
         return _this.validate();
@@ -3016,7 +3674,7 @@ CheckboxListControl = (function(_super) {
 module.exports = CheckboxListControl;
 
 
-},{"../../input/CheckboxList":57,"./BaseControl":20,"./Helpers":30}],27:[function(require,module,exports){
+},{"../../input/CheckboxList":67,"./BaseControl":24,"./Helpers":37}],32:[function(require,module,exports){
 var BaseControl, ColorControl, ColorInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3089,7 +3747,7 @@ ColorControl = (function(_super) {
 module.exports = ColorControl;
 
 
-},{"../../input/Color":58,"./BaseControl":20}],28:[function(require,module,exports){
+},{"../../input/Color":68,"./BaseControl":24}],33:[function(require,module,exports){
 var BaseSelectControl, Combo, ComboControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3135,7 +3793,7 @@ ComboControl = (function(_super) {
 module.exports = ComboControl;
 
 
-},{"../../input/Combo":59,"./BaseSelectControl":21}],29:[function(require,module,exports){
+},{"../../input/Combo":69,"./BaseSelectControl":26}],34:[function(require,module,exports){
 var DateControl, DateInput, TextControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3177,21 +3835,13 @@ DateControl = (function(_super) {
     DateControl.__super__.afterInit.apply(this, arguments);
     this.append = '<span class="glyphicon glyphicon-calendar"></span>';
     if (this.resettable) {
-      this.resetBtn = this.addButton('reset', {
-        disabled: true,
-        icon: 'glyphicon glyphicon-remove',
-        handler: (function(_this) {
-          return function() {
-            return _this.reset();
-          };
-        })(this)
-      });
+      this.addResetButton();
     }
   };
 
   DateControl.prototype.onDirtyChange = function(isDirty) {
-    if (this.resetBtn) {
-      this.resetBtn.setDisabled(!isDirty);
+    if (this.resettable) {
+      this.getButton('reset').setDisabled(!isDirty);
     }
   };
 
@@ -3199,6 +3849,7 @@ DateControl = (function(_super) {
     var input;
     input = new DateInput({
       id: this.id,
+      name: this.name,
       type: this.type,
       disabled: this.disabled,
       readonly: this.readonly,
@@ -3242,7 +3893,174 @@ DateControl = (function(_super) {
 module.exports = DateControl;
 
 
-},{"../../input/Date":60,"./Text":35}],30:[function(require,module,exports){
+},{"../../input/Date":71,"./Text":42}],35:[function(require,module,exports){
+var BaseControl, DateRangeControl, DateRangeInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseControl = require('./BaseControl');
+
+DateRangeInput = require('../../input/DateRange');
+
+DateRangeControl = (function(_super) {
+  __extends(DateRangeControl, _super);
+
+  function DateRangeControl() {
+    return DateRangeControl.__super__.constructor.apply(this, arguments);
+  }
+
+  DateRangeControl.prototype.xtype = "daterange";
+
+  DateRangeControl.prototype.readonly = false;
+
+  DateRangeControl.prototype.startDate = null;
+
+  DateRangeControl.prototype.endDate = null;
+
+  DateRangeControl.prototype.pickerBtn = false;
+
+  DateRangeControl.prototype.todayBtn = false;
+
+  DateRangeControl.prototype.clearBtn = false;
+
+  DateRangeControl.prototype.resettable = false;
+
+  DateRangeControl.prototype.editable = false;
+
+  DateRangeControl.prototype.afterInit = function() {
+    DateRangeControl.__super__.afterInit.apply(this, arguments);
+    if (this.resettable) {
+      this.addResetButton();
+    }
+  };
+
+  DateRangeControl.prototype.onDirtyChange = function(isDirty) {
+    if (this.resettable) {
+      this.getButton('reset').setDisabled(!isDirty);
+    }
+  };
+
+  DateRangeControl.prototype.createInput = function() {
+    var input;
+    input = new DateRangeInput({
+      id: this.id,
+      name: this.name,
+      disabled: this.disabled,
+      readonly: this.readonly,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      todayBtn: this.todayBtn || this.pickerBtn,
+      clearBtn: this.clearBtn || this.pickerBtn
+    });
+    input.on('changed', (function(_this) {
+      return function(picker, value) {
+        _this.setValue(value);
+      };
+    })(this));
+    return input;
+  };
+
+  DateRangeControl.prototype.setValue = function(value) {
+    this.input.setValue(value);
+    DateRangeControl.__super__.setValue.call(this, value);
+  };
+
+  DateRangeControl.prototype.setDisabled = function(disabled) {
+    this.input.setDisabled(disabled);
+    DateRangeControl.__super__.setDisabled.call(this, disabled);
+  };
+
+  DateRangeControl.prototype.afterRenderControl = function() {
+    DateRangeControl.__super__.afterRenderControl.apply(this, arguments);
+    if (this.resettable) {
+      this.input.el.addClass('has-append');
+    }
+  };
+
+  return DateRangeControl;
+
+})(BaseControl);
+
+module.exports = DateRangeControl;
+
+
+},{"../../input/DateRange":72,"./BaseControl":24}],36:[function(require,module,exports){
+var BaseControl, DropSelectControl, DropSelectInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseControl = require('./BaseControl');
+
+DropSelectInput = require('../../input/DropSelect');
+
+DropSelectControl = (function(_super) {
+  __extends(DropSelectControl, _super);
+
+  function DropSelectControl() {
+    return DropSelectControl.__super__.constructor.apply(this, arguments);
+  }
+
+  DropSelectControl.prototype.xtype = "dropselect";
+
+  DropSelectControl.prototype.store = void 0;
+
+  DropSelectControl.prototype.keyProperty = void 0;
+
+  DropSelectControl.prototype.textProperty = void 0;
+
+  DropSelectControl.prototype.sourceTitle = void 0;
+
+  DropSelectControl.prototype.targetTitle = void 0;
+
+  DropSelectControl.prototype.sourceEmpty = void 0;
+
+  DropSelectControl.prototype.targetEmpty = void 0;
+
+  DropSelectControl.prototype.createInput = function() {
+    return new DropSelectInput({
+      id: this.id,
+      store: this.store,
+      keyProperty: this.keyProperty,
+      textProperty: this.textProperty,
+      sourceTitle: this.sourceTitle,
+      targetTitle: this.targetTitle,
+      sourceEmpty: this.sourceEmpty,
+      targetEmpty: this.targetEmpty
+    });
+  };
+
+  DropSelectControl.prototype.setValue = function(value) {
+    this.input.setValue(value, true);
+    DropSelectControl.__super__.setValue.call(this, value);
+  };
+
+  DropSelectControl.prototype.setDisabled = function(disabled) {
+    this.input.setDisabled(disabled);
+    DropSelectControl.__super__.setDisabled.call(this, disabled);
+  };
+
+  DropSelectControl.prototype.renderControl = function(ct) {
+    this.getInput().render(ct);
+  };
+
+  DropSelectControl.prototype.afterRenderControl = function() {
+    this.input.setValue(this.value);
+    this.input.setDisabled(this.disabled);
+    this.input.on('change', (function(_this) {
+      return function() {
+        return _this.setValue(_this.input.getValue());
+      };
+    })(this));
+  };
+
+  return DropSelectControl;
+
+})(BaseControl);
+
+module.exports = DropSelectControl;
+
+
+},{"../../input/DropSelect":73,"./BaseControl":24}],37:[function(require,module,exports){
 var Helpers;
 
 Helpers = (function() {
@@ -3369,7 +4187,7 @@ Helpers = (function() {
 module.exports = Helpers;
 
 
-},{}],31:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 var NumberControl, TextControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3434,7 +4252,7 @@ NumberControl = (function(_super) {
 module.exports = NumberControl;
 
 
-},{"./Text":35}],32:[function(require,module,exports){
+},{"./Text":42}],39:[function(require,module,exports){
 var BaseControl, Helpers, RadioList, RadioListControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3503,11 +4321,6 @@ RadioListControl = (function(_super) {
         return _this.setValue(_this.input.getValue());
       };
     })(this));
-    this.input.on('focus', (function(_this) {
-      return function() {
-        return _this.setFocus();
-      };
-    })(this));
     this.input.on('blur', (function(_this) {
       return function() {
         return _this.validate();
@@ -3522,7 +4335,7 @@ RadioListControl = (function(_super) {
 module.exports = RadioListControl;
 
 
-},{"../../input/RadioList":62,"./BaseControl":20,"./Helpers":30}],33:[function(require,module,exports){
+},{"../../input/RadioList":75,"./BaseControl":24,"./Helpers":37}],40:[function(require,module,exports){
 var BaseSelectControl, Select, SelectControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3555,7 +4368,7 @@ SelectControl = (function(_super) {
 module.exports = SelectControl;
 
 
-},{"../../input/Select":63,"./BaseSelectControl":21}],34:[function(require,module,exports){
+},{"../../input/Select":76,"./BaseSelectControl":26}],41:[function(require,module,exports){
 var BaseControl, Slider, SliderControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3589,6 +4402,7 @@ SliderControl = (function(_super) {
   SliderControl.prototype.createInput = function() {
     var input;
     input = new Slider({
+      inputName: this.name,
       step: this.step,
       min: this.min,
       max: this.max
@@ -3608,7 +4422,7 @@ SliderControl = (function(_super) {
 module.exports = SliderControl;
 
 
-},{"../../input/Slider":64,"./BaseControl":20}],35:[function(require,module,exports){
+},{"../../input/Slider":77,"./BaseControl":24}],42:[function(require,module,exports){
 var BaseTextControl, TextControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3634,6 +4448,9 @@ TextControl = (function(_super) {
         break;
       case 'url':
         this.rules.addRule('url');
+        break;
+      case 'date':
+        this.rules.addRule('date');
     }
   };
 
@@ -3650,7 +4467,7 @@ TextControl = (function(_super) {
 module.exports = TextControl;
 
 
-},{"./BaseTextControl":22}],36:[function(require,module,exports){
+},{"./BaseTextControl":27}],43:[function(require,module,exports){
 var BaseTextControl, TextArea, TextAreaControl,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -3666,22 +4483,26 @@ TextAreaControl = (function(_super) {
     return TextAreaControl.__super__.constructor.apply(this, arguments);
   }
 
-  TextAreaControl.prototype.isTextAreaField = true;
-
   TextAreaControl.prototype.xtype = "textarea";
+
+  TextAreaControl.prototype.isTextAreaField = true;
 
   TextAreaControl.prototype.height = null;
 
   TextAreaControl.prototype.resize = "vertical";
 
   TextAreaControl.prototype.createInput = function() {
-    return new TextArea({
+    var input;
+    input = new TextArea({
       id: this.id + '-input',
+      inputName: this.name,
       height: this.height,
       readonly: this.readonly,
       disabled: this.disabled,
-      resize: this.resize
+      resize: this.resize,
+      placeholder: this.placeholder
     });
+    return input;
   };
 
   return TextAreaControl;
@@ -3691,7 +4512,85 @@ TextAreaControl = (function(_super) {
 module.exports = TextAreaControl;
 
 
-},{"../../input/TextArea":66,"./BaseTextControl":22}],37:[function(require,module,exports){
+},{"../../input/TextArea":79,"./BaseTextControl":27}],44:[function(require,module,exports){
+var BaseControl, ToggleControl, ToggleInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseControl = require('./BaseControl');
+
+ToggleInput = require('../../input/Toggle');
+
+ToggleControl = (function(_super) {
+  __extends(ToggleControl, _super);
+
+  function ToggleControl() {
+    return ToggleControl.__super__.constructor.apply(this, arguments);
+  }
+
+  ToggleControl.prototype.xtype = 'toggle';
+
+  ToggleControl.prototype.onState = void 0;
+
+  ToggleControl.prototype.offState = void 0;
+
+  ToggleControl.prototype.onText = void 0;
+
+  ToggleControl.prototype.offText = void 0;
+
+  ToggleControl.prototype.size = void 0;
+
+  ToggleControl.prototype.value = false;
+
+  ToggleControl.prototype.createInput = function() {
+    return new ToggleInput({
+      id: this.id,
+      inputName: this.name,
+      size: this.size,
+      onState: this.onState,
+      offState: this.offState,
+      onText: this.onText,
+      offText: this.offText
+    });
+  };
+
+  ToggleControl.prototype.setValue = function(value) {
+    this.input.setValue(value);
+    ToggleControl.__super__.setValue.call(this, value);
+  };
+
+  ToggleControl.prototype.setDisabled = function(disabled) {
+    this.input.setDisabled(disabled);
+    ToggleControl.__super__.setDisabled.call(this, disabled);
+  };
+
+  ToggleControl.prototype.setReadonly = function(readonly) {
+    this.input.setReadonly(readonly);
+  };
+
+  ToggleControl.prototype.renderControl = function(ct) {
+    this.getInput().render(ct);
+  };
+
+  ToggleControl.prototype.afterRenderControl = function() {
+    this.input.setValue(this.value);
+    this.input.setDisabled(this.disabled);
+    this.input.setReadonly(this.readonly);
+    this.input.on('change', (function(_this) {
+      return function() {
+        return _this.setValue(_this.input.getValue());
+      };
+    })(this));
+  };
+
+  return ToggleControl;
+
+})(BaseControl);
+
+module.exports = ToggleControl;
+
+
+},{"../../input/Toggle":80,"./BaseControl":24}],45:[function(require,module,exports){
 var BaseContainer, exports;
 
 exports = {
@@ -3707,6 +4606,7 @@ exports = {
   },
   control: {
     BaseControl: require('./control/BaseControl'),
+    BaseInputControl: require('./control/BaseInputControl'),
     BaseTextControl: require('./control/BaseTextControl'),
     Checkbox: require('./control/Checkbox'),
     CheckboxList: require('./control/CheckboxList'),
@@ -3715,10 +4615,13 @@ exports = {
     Combo: require('./control/Combo'),
     Color: require('./control/Color'),
     Date: require('./control/Date'),
+    DateRange: require('./control/DateRange'),
     Number: require('./control/Number'),
     Slider: require('./control/Slider'),
     Text: require('./control/Text'),
     TextArea: require('./control/TextArea'),
+    Toggle: require('./control/Toggle'),
+    DropSelect: require('./control/DropSelect'),
     ButtonGroup: require('./control/ButtonGroup'),
     Button: require('./control/Buttons').ButtonControl,
     SubmitButton: require('./control/Buttons').SubmitButton,
@@ -3729,6 +4632,8 @@ exports = {
 BaseContainer = exports.container.BaseContainer;
 
 BaseContainer.registerControl('date', exports.control.Date);
+
+BaseContainer.registerControl('dateRange', exports.control.DateRange);
 
 BaseContainer.registerControl('text', exports.control.Text);
 
@@ -3750,6 +4655,10 @@ BaseContainer.registerControl('checkboxList', exports.control.CheckboxList);
 
 BaseContainer.registerControl('radioList', exports.control.RadioList);
 
+BaseContainer.registerControl('toggle', exports.control.Toggle);
+
+BaseContainer.registerControl('dropSelect', exports.control.DropSelect);
+
 BaseContainer.registerControl('buttonGroup', exports.control.ButtonGroup);
 
 BaseContainer.registerControl('button', exports.control.Button);
@@ -3761,7 +4670,7 @@ BaseContainer.registerControl('reset', exports.control.ResetButton);
 module.exports = exports;
 
 
-},{"./container/BaseContainer":17,"./container/Fieldset":18,"./container/Form":19,"./control/BaseControl":20,"./control/BaseTextControl":22,"./control/ButtonGroup":23,"./control/Buttons":24,"./control/Checkbox":25,"./control/CheckboxList":26,"./control/Color":27,"./control/Combo":28,"./control/Date":29,"./control/Number":31,"./control/RadioList":32,"./control/Select":33,"./control/Slider":34,"./control/Text":35,"./control/TextArea":36,"./render/FormRendererFactory":38,"./render/HorizontalRenderer":39,"./render/InlineRenderer":40}],38:[function(require,module,exports){
+},{"./container/BaseContainer":21,"./container/Fieldset":22,"./container/Form":23,"./control/BaseControl":24,"./control/BaseInputControl":25,"./control/BaseTextControl":27,"./control/ButtonGroup":28,"./control/Buttons":29,"./control/Checkbox":30,"./control/CheckboxList":31,"./control/Color":32,"./control/Combo":33,"./control/Date":34,"./control/DateRange":35,"./control/DropSelect":36,"./control/Number":38,"./control/RadioList":39,"./control/Select":40,"./control/Slider":41,"./control/Text":42,"./control/TextArea":43,"./control/Toggle":44,"./render/FormRendererFactory":46,"./render/HorizontalRenderer":47,"./render/InlineRenderer":48}],46:[function(require,module,exports){
 var FormRendererFactory;
 
 FormRendererFactory = (function() {
@@ -3789,7 +4698,7 @@ FormRendererFactory = (function() {
 module.exports = FormRendererFactory;
 
 
-},{}],39:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 var HorizontalRenderer;
 
 HorizontalRenderer = (function() {
@@ -3805,11 +4714,30 @@ HorizontalRenderer = (function() {
   }
 
   HorizontalRenderer.prototype.renderForm = function(form) {
+    var username;
     form.el.addClass('form-horizontal');
+    if (form.preventAutoLogin) {
+      username = new Element('input', {
+        name: '_username',
+        styles: {
+          display: 'none'
+        }
+      });
+      username.inject(form.el);
+      username = new Element('input', {
+        name: '_password',
+        type: 'password',
+        styles: {
+          display: 'none'
+        }
+      });
+      username.inject(form.el);
+    }
   };
 
   HorizontalRenderer.prototype.renderButtons = function(buttons, ct) {
     var button, _i, _len;
+    ct.addClass('form-actions');
     if (ct.generated) {
       ct.addClass("col-sm-offset-" + (12 - this.options.baseColSize));
       ct.addClass("col-sm-" + this.options.baseColSize);
@@ -3827,9 +4755,6 @@ HorizontalRenderer = (function() {
       control.groupEl.addClass('form-group');
     }
     control.el = control.groupEl;
-    if (control.isBoxControl) {
-      control.groupEl.addClass('margin-no');
-    }
     if (!control.labelRendered) {
       this.renderLabel(control, control.groupEl);
     }
@@ -3900,7 +4825,7 @@ HorizontalRenderer = (function() {
 module.exports = HorizontalRenderer;
 
 
-},{}],40:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 var InlineRenderer;
 
 InlineRenderer = (function() {
@@ -3979,7 +4904,7 @@ InlineRenderer = (function() {
 module.exports = InlineRenderer;
 
 
-},{}],41:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 var Action,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4012,8 +4937,8 @@ Action = (function(_super) {
 module.exports = Action;
 
 
-},{}],42:[function(require,module,exports){
-var ActionColumn, CheckColumn, CheckerColumn, DateColumn, Grid, GridRenderer, LoadMask, NumberColumn, Operations, Paginator, SelectionModel, TextColumn,
+},{}],50:[function(require,module,exports){
+var ActionColumn, CheckerColumn, Grid, GridRenderer, LoadMask, Operations, Paginator, Pane, SelectionModel,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -4023,21 +4948,15 @@ GridRenderer = require('./renderer/GridRenderer');
 
 CheckerColumn = require('./column/CheckerColumn');
 
-CheckColumn = require('./column/CheckColumn');
-
-DateColumn = require('./column/DateColumn');
-
-TextColumn = require('./column/TextColumn');
-
-NumberColumn = require('./column/NumberColumn');
-
 ActionColumn = require('./column/ActionColumn');
 
 Operations = require('./Operations');
 
 LoadMask = require('../utils/LoadMask');
 
-Paginator = require('../nav/Paginator');
+Paginator = require('../pagination/Paginator');
+
+Pane = require('../panel/Pane');
 
 Grid = (function(_super) {
   __extends(Grid, _super);
@@ -4080,11 +4999,11 @@ Grid = (function(_super) {
 
   Grid.prototype.role = 'grid';
 
+  Grid.prototype.size = 'md';
+
   Grid.prototype.layout = false;
 
   Grid.prototype.baseCls = "grid";
-
-  Grid.prototype.contentEl = 'div';
 
   Grid.prototype.checker = null;
 
@@ -4102,19 +5021,58 @@ Grid = (function(_super) {
 
   Grid.prototype.actionColumnIndex = 0;
 
+  Grid.registerColumn = function(columnName, fn) {
+    var addMethod;
+    if (!fn) {
+      throw new Error("Error in registry control " + controlName + ", constructor is undefined");
+    }
+    addMethod = 'add' + columnName.capitalize();
+    this.prototype[addMethod] = function(name, config) {
+      if (config == null) {
+        config = {};
+      }
+      return this.addColumn(name, new fn(config));
+    };
+  };
+
   Grid.prototype.afterInit = function() {
-    Grid.__super__.afterInit.call(this);
-    this.contentEl.addClass(this.getBaseCls('container'));
+    var contentEl;
+    Grid.__super__.afterInit.apply(this, arguments);
     if (this.loadMask) {
       this.setLoadMask(this.loadMask);
     }
     if (this.store) {
-      this.setStore(miwo.store(this.store));
+      if (Type.isString(this.store)) {
+        this.setStore(miwo.store(this.store));
+      } else {
+        this.setStore(this.store);
+      }
     }
     if (this.renderer) {
       this.rendererOptions = this.renderer;
       this.renderer = null;
     }
+    contentEl = this.getContentEl();
+    contentEl.addClass(this.getBaseCls('container'));
+    this.headerEl = new Element("div", {
+      parent: contentEl,
+      cls: this.getBaseCls("header")
+    });
+    this.mainEl = new Element("div", {
+      parent: contentEl,
+      cls: this.getBaseCls("main")
+    });
+    this.bodyEl = new Element("div", {
+      parent: this.mainEl,
+      cls: this.getBaseCls("body")
+    });
+    this.footerEl = new Element("div", {
+      parent: contentEl,
+      cls: this.getBaseCls("footer")
+    });
+    this.contentEl = this.bodyEl;
+    this.scrollableCt = this.mainEl;
+    this.scrollableEl = this.bodyEl;
   };
 
   Grid.prototype.addedComponent = function(column) {
@@ -4128,24 +5086,8 @@ Grid = (function(_super) {
     return this.add(name, column);
   };
 
-  Grid.prototype.addCheckColumn = function(name, config) {
-    return this.addColumn(name, new CheckColumn(config));
-  };
-
   Grid.prototype.addCheckerColumn = function(name, config) {
     return this.addColumn(name, new CheckerColumn(config));
-  };
-
-  Grid.prototype.addDateColumn = function(name, config) {
-    return this.addColumn(name, new DateColumn(config));
-  };
-
-  Grid.prototype.addNumberColumn = function(name, config) {
-    return this.addColumn(name, new NumberColumn(config));
-  };
-
-  Grid.prototype.addTextColumn = function(name, config) {
-    return this.addColumn(name, new TextColumn(config));
   };
 
   Grid.prototype.addActionColumn = function(name, config) {
@@ -4298,8 +5240,7 @@ Grid = (function(_super) {
   };
 
   Grid.prototype.doRender = function() {
-    var config, el, type;
-    el = this.getContentEl();
+    var config, type;
     if (this.selectable || this.operations) {
       if (!this.selectionModel) {
         if (Type.isString(this.selection)) {
@@ -4328,18 +5269,6 @@ Grid = (function(_super) {
         this.checker = this.addCheckerColumn('checker');
       }
     }
-    this.headerEl = new Element("div", {
-      parent: el,
-      cls: this.getBaseCls("header")
-    });
-    this.bodyEl = new Element("div", {
-      parent: el,
-      cls: this.getBaseCls("body")
-    });
-    this.footerEl = new Element("div", {
-      parent: el,
-      cls: this.getBaseCls("footer")
-    });
     this.getRenderer().render();
   };
 
@@ -4390,17 +5319,17 @@ Grid = (function(_super) {
     this.renderer = null;
     this.selector = null;
     this.store = null;
-    Grid.__super__.doDestroy.call(this);
+    return Grid.__super__.doDestroy.apply(this, arguments);
   };
 
   return Grid;
 
-})(Miwo.Container);
+})(Pane);
 
 module.exports = Grid;
 
 
-},{"../nav/Paginator":69,"../selection/SelectionModel":89,"../utils/LoadMask":104,"./Operations":43,"./column/ActionColumn":44,"./column/CheckColumn":45,"./column/CheckerColumn":46,"./column/DateColumn":48,"./column/NumberColumn":49,"./column/TextColumn":50,"./renderer/GridRenderer":52}],43:[function(require,module,exports){
+},{"../pagination/Paginator":89,"../panel/Pane":91,"../selection/SelectionModel":110,"../utils/LoadMask":125,"./Operations":51,"./column/ActionColumn":52,"./column/CheckerColumn":54,"./renderer/GridRenderer":61}],51:[function(require,module,exports){
 var Action, Button, Operations, PopoverSubmit, Select,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4487,7 +5416,7 @@ Operations = (function(_super) {
 module.exports = Operations;
 
 
-},{"../buttons/Button":6,"../input/Select":63,"./Action":41,"./utils/PopoverSubmit":54}],44:[function(require,module,exports){
+},{"../buttons/Button":6,"../input/Select":76,"./Action":49,"./utils/PopoverSubmit":63}],52:[function(require,module,exports){
 var Action, ActionColumn, Button, Column, DropdownButton, PopoverSubmit,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4511,7 +5440,7 @@ ActionColumn = (function(_super) {
 
   ActionColumn.prototype.align = 'right';
 
-  ActionColumn.prototype.colClass = 'actions';
+  ActionColumn.prototype.colCls = 'actions';
 
   ActionColumn.prototype.isActionColumn = true;
 
@@ -4651,7 +5580,7 @@ ActionColumn = (function(_super) {
 module.exports = ActionColumn;
 
 
-},{"../../buttons/Button":6,"../../buttons/DropdownButton":8,"../Action":41,"../utils/PopoverSubmit":54,"./Column":47}],45:[function(require,module,exports){
+},{"../../buttons/Button":6,"../../buttons/DropdownButton":8,"../Action":49,"../utils/PopoverSubmit":63,"./Column":55}],53:[function(require,module,exports){
 var CheckColumn, Column,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4690,7 +5619,7 @@ CheckColumn = (function(_super) {
 module.exports = CheckColumn;
 
 
-},{"./Column":47}],46:[function(require,module,exports){
+},{"./Column":55}],54:[function(require,module,exports){
 var Checkbox, CheckerColumn, Column,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4702,26 +5631,28 @@ Checkbox = require('../../input/Checkbox');
 CheckerColumn = (function(_super) {
   __extends(CheckerColumn, _super);
 
+  function CheckerColumn() {
+    return CheckerColumn.__super__.constructor.apply(this, arguments);
+  }
+
   CheckerColumn.prototype.xtype = "checkercolumn";
 
   CheckerColumn.prototype.align = "center";
 
   CheckerColumn.prototype.width = 50;
 
-  CheckerColumn.prototype.colClass = 'checker';
+  CheckerColumn.prototype.colCls = 'checker';
 
   CheckerColumn.prototype.isCheckerColumn = true;
 
-  CheckerColumn.prototype.preventUpdateCell = true;
+  CheckerColumn.randId = 0;
 
-  function CheckerColumn(config) {
-    CheckerColumn.__super__.constructor.call(this, config);
-  }
+  CheckerColumn.prototype.preventUpdateCell = true;
 
   CheckerColumn.prototype.onRenderCell = function(td, value, record) {
     var checkbox;
     checkbox = new Checkbox({
-      id: this.getGrid().id.toString() + "-checker-" + record.getId().toString()
+      id: this.getGrid().id.toString() + "-checker-" + (record.id || 'rnd' + (CheckerColumn.randId++))
     });
     checkbox.render(td);
     checkbox.on('change', (function(_this) {
@@ -4789,7 +5720,7 @@ CheckerColumn = (function(_super) {
 module.exports = CheckerColumn;
 
 
-},{"../../input/Checkbox":56,"./Column":47}],47:[function(require,module,exports){
+},{"../../input/Checkbox":66,"./Column":55}],55:[function(require,module,exports){
 var Column,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4874,7 +5805,7 @@ Column = (function(_super) {
 module.exports = Column;
 
 
-},{}],48:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 var Column, DateColumn,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4898,7 +5829,11 @@ DateColumn = (function(_super) {
 
   DateColumn.prototype.formatValue = function(value, record) {
     if (Type.isDate(value)) {
-      return value.format(this.format);
+      if (value.format) {
+        return value.format(this.format);
+      } else {
+        return value.toDateString();
+      }
     } else {
       return value;
     }
@@ -4911,7 +5846,7 @@ DateColumn = (function(_super) {
 module.exports = DateColumn;
 
 
-},{"./Column":47}],49:[function(require,module,exports){
+},{"./Column":55}],57:[function(require,module,exports){
 var Column, NumberColumn,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4936,7 +5871,7 @@ NumberColumn = (function(_super) {
 module.exports = NumberColumn;
 
 
-},{"./Column":47}],50:[function(require,module,exports){
+},{"./Column":55}],58:[function(require,module,exports){
 var Column, TextColumn,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4959,8 +5894,72 @@ TextColumn = (function(_super) {
 module.exports = TextColumn;
 
 
-},{"./Column":47}],51:[function(require,module,exports){
-module.exports = {
+},{"./Column":55}],59:[function(require,module,exports){
+var Column, ToggleColumn, ToggleInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Column = require('./Column');
+
+ToggleInput = require('../../input/Toggle');
+
+ToggleColumn = (function(_super) {
+  __extends(ToggleColumn, _super);
+
+  function ToggleColumn() {
+    return ToggleColumn.__super__.constructor.apply(this, arguments);
+  }
+
+  ToggleColumn.prototype.xtype = 'togglecolumn';
+
+  ToggleColumn.prototype.align = 'center';
+
+  ToggleColumn.prototype.width = 110;
+
+  ToggleColumn.prototype.onState = void 0;
+
+  ToggleColumn.prototype.offState = void 0;
+
+  ToggleColumn.prototype.onText = void 0;
+
+  ToggleColumn.prototype.offText = void 0;
+
+  ToggleColumn.prototype.size = void 0;
+
+  ToggleColumn.prototype.renderValue = function(value, row) {
+    var input;
+    input = new ToggleInput({
+      value: value,
+      onState: this.onState,
+      offState: this.offState,
+      onText: this.onText,
+      offText: this.offText,
+      size: this.size
+    });
+    input.on('beforechange', (function(_this) {
+      return function() {
+        _this.emit('beforechange', _this, input, row);
+      };
+    })(this));
+    input.on('change', (function(_this) {
+      return function() {
+        row.set(_this.getDataIndex(), input.getValue());
+      };
+    })(this));
+    return input;
+  };
+
+  return ToggleColumn;
+
+})(Column);
+
+module.exports = ToggleColumn;
+
+
+},{"../../input/Toggle":80,"./Column":55}],60:[function(require,module,exports){
+var Grid, exports;
+
+exports = {
   Grid: require('./Grid'),
   Action: require('./Action'),
   Operations: require('./Operations'),
@@ -4971,6 +5970,7 @@ module.exports = {
     CheckColumn: require('./column/CheckColumn'),
     CheckerColumn: require('./column/CheckerColumn'),
     TextColumn: require('./column/TextColumn'),
+    ToggleColumn: require('./column/ToggleColumn'),
     ActionColumn: require('./column/ActionColumn')
   },
   renderer: {
@@ -4982,8 +5982,22 @@ module.exports = {
   }
 };
 
+Grid = exports.Grid;
 
-},{"./Action":41,"./Grid":42,"./Operations":43,"./column/ActionColumn":44,"./column/CheckColumn":45,"./column/CheckerColumn":46,"./column/Column":47,"./column/DateColumn":48,"./column/NumberColumn":49,"./column/TextColumn":50,"./renderer/GridRenderer":52,"./renderer/WidthManager":53,"./utils/PopoverSubmit":54}],52:[function(require,module,exports){
+Grid.registerColumn('numberColumn', exports.column.NumberColumn);
+
+Grid.registerColumn('dateColumn', exports.column.DateColumn);
+
+Grid.registerColumn('checkColumn', exports.column.CheckColumn);
+
+Grid.registerColumn('textColumn', exports.column.TextColumn);
+
+Grid.registerColumn('toggleColumn', exports.column.ToggleColumn);
+
+module.exports = exports;
+
+
+},{"./Action":49,"./Grid":50,"./Operations":51,"./column/ActionColumn":52,"./column/CheckColumn":53,"./column/CheckerColumn":54,"./column/Column":55,"./column/DateColumn":56,"./column/NumberColumn":57,"./column/TextColumn":58,"./column/ToggleColumn":59,"./renderer/GridRenderer":61,"./renderer/WidthManager":62,"./utils/PopoverSubmit":63}],61:[function(require,module,exports){
 var GridRenderer, WidthManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5054,6 +6068,9 @@ GridRenderer = (function(_super) {
     if (grid.verticalAlign) {
       bodyEl.addClass('grid-align-' + grid.verticalAlign);
     }
+    if (grid.size) {
+      bodyEl.addClass('grid-' + grid.size);
+    }
     theadTable = new Element("table");
     theadTable.inject(grid.headerEl);
     this.renderHeader(theadTable);
@@ -5077,27 +6094,29 @@ GridRenderer = (function(_super) {
   GridRenderer.prototype.refresh = function() {
     this.destroyRows(this.tbody);
     this.renderBody(this.tbody);
-    this.widthManager.actualize();
     this.grid.onRefresh();
+    this.widthManager.actualize();
   };
 
-  GridRenderer.prototype.recordAdded = function(record) {
-    this.renderRow(this.tbody, record, this.tbody.getChildren().length);
+  GridRenderer.prototype.recordAdded = function(record, index) {
+    var tr;
+    tr = this.renderRow(this.tbody, record, this.tbody.getChildren().length);
+    this.widthManager.actualize(tr);
     this.syncRows();
   };
 
   GridRenderer.prototype.recordRemoved = function(record) {
     var tr;
-    tr = this.getRowById(record.getId());
+    tr = this.getRowByRecord(record);
     if (tr) {
       this.destroyRow(tr);
       this.syncRows();
     }
   };
 
-  GridRenderer.prototype.recordUpdated = function(record) {
+  GridRenderer.prototype.recordUpdated = function(record, index) {
     var tr;
-    tr = this.getRowById(record.getId());
+    tr = this.getRowByRecord(record);
     if (tr) {
       this.updateRow(tr, record);
       this.syncRows();
@@ -5120,14 +6139,12 @@ GridRenderer = (function(_super) {
       column = _ref[_i];
       th = new Element("th").inject(tr);
       th.addClass('text-' + column.align);
-      if (column.colClass) {
-        th.addClass('grid-col-' + column.colClass);
+      if (column.colCls) {
+        th.addClass('grid-col-' + column.colCls);
       }
       th.set("column", column.name);
       th.set("html", column.renderHeader());
-      if (column.title) {
-        th.set("title", column.title);
-      }
+      th.set("title", column.title || column.text);
       if (!column.visible) {
         th.setVisible(false);
       }
@@ -5146,8 +6163,8 @@ GridRenderer = (function(_super) {
       cls: "grid-rows"
     });
     tbody.inject(tbodyTable);
-    tbody.on("click:relay(td)", this.bound('onCellClick'));
-    tbody.on("dblclick:relay(td)", this.bound('onCellDblClick'));
+    tbody.on("click:relay(tr.grid-row-data td)", this.bound('onCellClick'));
+    tbody.on("dblclick:relay(tr.grid-row-data td)", this.bound('onCellDblClick'));
     this.tbody = tbody;
     this.grid.tbodyEl = tbody;
     records = this.grid.getRecords();
@@ -5211,10 +6228,15 @@ GridRenderer = (function(_super) {
       this.renderCell(tr, record, column);
     }
     this.grid.emit("rowrender", this.grid, tr, record, index);
+    return tr;
   };
 
   GridRenderer.prototype.updateRow = function(tr, record) {
     var cells, column, td, _i, _j, _len, _len1, _ref, _ref1;
+    if (!tr.retrieve("rowid")) {
+      tr.set("data-row", record.getId());
+      tr.store("rowid", record.getId());
+    }
     cells = {};
     _ref = tr.getElements('td');
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -5228,13 +6250,14 @@ GridRenderer = (function(_super) {
         this.updateCell(cells[column.name], record, column);
       }
     }
+    this.grid.emit("rowrender", this.grid, tr, record);
   };
 
   GridRenderer.prototype.renderCell = function(tr, record, column) {
     var td;
     td = new Element("td").inject(tr);
-    if (column.colClass) {
-      td.addClass('grid-col-' + column.colClass);
+    if (column.colCls) {
+      td.addClass('grid-col-' + column.colCls);
     }
     td.addClass("text-" + column.align);
     td.store("dataIndex", column.getDataIndex());
@@ -5249,14 +6272,20 @@ GridRenderer = (function(_super) {
   };
 
   GridRenderer.prototype.updateCell = function(td, record, column) {
-    var dataIndex, value;
+    var dataIndex, rendered, value;
     dataIndex = column.getDataIndex();
     value = record.get(dataIndex);
-    td.set("html", column.renderValue(value, record));
+    rendered = column.renderValue(value, record);
+    if (Type.isObject(rendered) && rendered.isComponent) {
+      td.empty();
+      rendered.render(td);
+    } else {
+      td.set('html', rendered);
+    }
     if (column.onRenderCell) {
       column.onRenderCell(td, value, record);
     }
-    this.grid.emit("cellrender", this.grid, td, value, record);
+    this.grid.emit('cellrender', this.grid, td, value, record);
   };
 
   GridRenderer.prototype.destroyRows = function(tbody) {
@@ -5264,17 +6293,21 @@ GridRenderer = (function(_super) {
     _ref = tbody.getElements("tr");
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       tr = _ref[_i];
-      this.destroyRow(tr);
+      if (tr.hasClass('grid-row-group')) {
+        tr.destroy();
+      } else {
+        this.destroyRow(tr);
+      }
     }
   };
 
   GridRenderer.prototype.destroyRow = function(tr) {
     var record, td, _i, _len, _ref;
-    record = tr.retrieve("record");
-    tr.eliminate("record");
-    tr.eliminate("rowid");
-    this.grid.emit("rowdestroy", this.grid, tr);
-    _ref = tr.getElements("td");
+    record = tr.retrieve('record');
+    tr.eliminate('record');
+    tr.eliminate('rowid');
+    this.grid.emit('rowdestroy', this.grid, tr);
+    _ref = tr.getElements('td');
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       td = _ref[_i];
       this.destroyCell(td, record);
@@ -5283,13 +6316,14 @@ GridRenderer = (function(_super) {
   };
 
   GridRenderer.prototype.destroyCell = function(td, record) {
-    var column;
-    column = this.grid.get(td.get("column"));
+    var column, name;
+    name = td.get('column');
+    column = this.grid.get(name);
     if (column.onDestroyCell) {
       column.onDestroyCell(td, record);
     }
-    this.grid.emit("celldestroy", this.grid, td);
-    td.eliminate("dataIndex");
+    this.grid.emit('celldestroy', this.grid, td);
+    td.eliminate('dataIndex');
   };
 
   GridRenderer.prototype.syncRows = function() {
@@ -5318,7 +6352,7 @@ GridRenderer = (function(_super) {
           this.renderGroup(this.tbody, name);
         }
       }
-      _ref = this.tbody.getElements("tr.grid-row-group");
+      _ref = this.tbody.getElements('tr.grid-row-group');
       for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
         groupRow = _ref[_k];
         groupName = groupRow.get('data-group');
@@ -5412,10 +6446,10 @@ GridRenderer = (function(_super) {
   };
 
   GridRenderer.prototype.onCellClick = function(e, td) {
-    if (td.get("disableclick")) {
+    if (td.get('disableclick')) {
       return;
     }
-    if (e.target.tagName === "A") {
+    if (e.target.tagName === 'A') {
       return;
     }
     clearTimeout(this.cellclickTimeoutId);
@@ -5423,17 +6457,15 @@ GridRenderer = (function(_super) {
       return function() {
         var info;
         info = _this.getCellInfo(td);
-        _this.grid.emit("cellclick", _this.grid, td, info.record, info, e);
-        if (_this.grid.rowclickable) {
-          _this.grid.emit("rowclick", _this.grid, info.record, info, e);
-        }
+        _this.grid.emit('cellclick', _this.grid, td, info.record, info, e);
+        _this.grid.emit('rowclick', _this.grid, info.record, info, e);
       };
     })(this)).delay(this.dblclickdelay);
   };
 
   GridRenderer.prototype.onCellDblClick = function(e, td) {
     var info;
-    if (td.get("disableclick")) {
+    if (td.get('disableclick')) {
       return;
     }
     if (e.target.tagName === "A") {
@@ -5441,17 +6473,15 @@ GridRenderer = (function(_super) {
     }
     clearTimeout(this.cellclickTimeoutId);
     info = this.getCellInfo(td);
-    this.grid.emit("celldblclick", this.grid, td, info.record, info, e);
-    if (this.grid.rowclickable) {
-      this.grid.emit("rowdblclick", this.grid, info.record, info, e);
-    }
+    this.grid.emit('celldblclick', this.grid, td, info.record, info, e);
+    this.grid.emit('rowdblclick', this.grid, info.record, info, e);
   };
 
   GridRenderer.prototype.getCellInfo = function(td) {
     var dataIndex, record, tr;
     tr = td.getParent();
-    dataIndex = td.retrieve("dataIndex");
-    record = tr.retrieve("record");
+    dataIndex = td.retrieve('dataIndex');
+    record = tr.retrieve('record');
     return {
       tr: tr,
       cellIndex: td.getIndex(),
@@ -5459,13 +6489,13 @@ GridRenderer = (function(_super) {
       record: record,
       value: record.get(dataIndex),
       dataIndex: dataIndex,
-      column: td.get("column")
+      column: td.get('column')
     };
   };
 
   GridRenderer.prototype.getRowById = function(id) {
     var tr, _i, _len, _ref;
-    _ref = this.tbody.getElements("tr");
+    _ref = this.tbody.getElements('tr');
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       tr = _ref[_i];
       if (tr.retrieve('rowid') === id) {
@@ -5475,17 +6505,30 @@ GridRenderer = (function(_super) {
     return null;
   };
 
-  GridRenderer.prototype.onGridParentShown = function(component) {
+  GridRenderer.prototype.getRowByRecord = function(record) {
+    var tr, _i, _len, _ref;
+    _ref = this.tbody.getElements('tr');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      tr = _ref[_i];
+      if (tr.retrieve('record') === record) {
+        return tr;
+      }
+    }
+    return null;
+  };
+
+  GridRenderer.prototype.onGridParentShown = function() {
+    this.widthManager.widths = null;
     this.widthManager.actualize();
   };
 
   GridRenderer.prototype.doDestroy = function() {
     this.widthManager.destroy();
-    this.grid.un("parentshown", this.bound('onGridParentShown'));
-    this.grid.un("selectionchange", this.bound('onSelectionChanged'));
+    this.grid.un('parentshown', this.bound('onGridParentShown'));
+    this.grid.un('selectionchange', this.bound('onSelectionChanged'));
     this.destroyRows(this.tbody);
     this.grid = this.tbody = this.tfilters = this.thead = this.tfoot = null;
-    GridRenderer.__super__.doDestroy.call(this);
+    return GridRenderer.__super__.doDestroy.apply(this, arguments);
   };
 
   return GridRenderer;
@@ -5495,7 +6538,7 @@ GridRenderer = (function(_super) {
 module.exports = GridRenderer;
 
 
-},{"./WidthManager":53}],53:[function(require,module,exports){
+},{"./WidthManager":62}],62:[function(require,module,exports){
 var WidthManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5507,6 +6550,8 @@ WidthManager = (function(_super) {
 
   WidthManager.prototype.renderer = null;
 
+  WidthManager.prototype.widths = null;
+
   function WidthManager(renderer, config) {
     this.renderer = renderer;
     WidthManager.__super__.constructor.call(this, config);
@@ -5514,8 +6559,54 @@ WidthManager = (function(_super) {
     return;
   }
 
-  WidthManager.prototype.actualize = function() {
-    var column, columns, fitWidth, freeWidth, isFit, name, renderer, td, th, theadRow, totalFit, tr, width, widths, wildCount, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+  WidthManager.prototype.actualize = function(tr) {
+    var name, th, theadRow, width, _i, _len, _ref, _ref1;
+    if (tr == null) {
+      tr = null;
+    }
+    if (!this.widths) {
+      this.widths = this.detectWidths();
+    }
+    if (tr) {
+      this.actualizeRow(tr, this.widths);
+    } else {
+      theadRow = this.renderer.thead;
+      _ref = this.widths;
+      for (name in _ref) {
+        width = _ref[name];
+        if (width !== null) {
+          th = theadRow.getElement("tr th[column=\"" + name + "\"]");
+          th.setStyle("width", width);
+          th.setStyle("max-width", width);
+        }
+      }
+      _ref1 = this.renderer.tbody.getElements("tr.grid-row-data");
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        tr = _ref1[_i];
+        this.actualizeRow(tr, this.widths);
+      }
+    }
+  };
+
+  WidthManager.prototype.actualizeRow = function(tr, widths) {
+    var name, td, width;
+    for (name in widths) {
+      width = widths[name];
+      if (width !== null) {
+        td = tr.getElement("td[column=\"" + name + "\"]");
+        td.setStyle("width", width);
+        td.setStyle("max-width", width);
+      }
+    }
+  };
+
+  WidthManager.prototype.onWindowResize = function() {
+    this.widths = null;
+    this.actualize();
+  };
+
+  WidthManager.prototype.detectWidths = function() {
+    var column, columns, fitWidth, freeWidth, isFit, name, renderer, totalFit, widths, wildCount, _i, _j, _k, _len, _len1, _len2, _ref;
     renderer = this.renderer;
     freeWidth = renderer.grid.bodyEl.getWidth();
     totalFit = 0;
@@ -5570,31 +6661,7 @@ WidthManager = (function(_super) {
         }
       }
     }
-    theadRow = renderer.thead;
-    for (name in widths) {
-      width = widths[name];
-      if (width !== null) {
-        th = theadRow.getElement("tr th[column=\"" + name + "\"]");
-        th.setStyle("width", width);
-        th.setStyle("max-width", width);
-      }
-    }
-    _ref1 = renderer.tbody.getElements("tr.grid-row-data");
-    for (_l = 0, _len3 = _ref1.length; _l < _len3; _l++) {
-      tr = _ref1[_l];
-      for (name in widths) {
-        width = widths[name];
-        if (width !== null) {
-          td = tr.getElement("td[column=\"" + name + "\"]");
-          td.setStyle("width", width);
-          td.setStyle("max-width", width);
-        }
-      }
-    }
-  };
-
-  WidthManager.prototype.onWindowResize = function() {
-    this.actualize();
+    return widths;
   };
 
   WidthManager.prototype.doDestroy = function() {
@@ -5610,7 +6677,7 @@ WidthManager = (function(_super) {
 module.exports = WidthManager;
 
 
-},{}],54:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 var Button, Popover, PopoverSubmit,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5630,11 +6697,11 @@ PopoverSubmit = (function(_super) {
 
   PopoverSubmit.prototype.onCancel = null;
 
-  PopoverSubmit.prototype.width = 140;
+  PopoverSubmit.prototype.width = 145;
 
   PopoverSubmit.prototype.doInit = function() {
     var buttonNo, buttonYes;
-    PopoverSubmit.__super__.doInit.call(this);
+    PopoverSubmit.__super__.doInit.apply(this, arguments);
     this.el.addClass('grid-popover-submit');
     buttonYes = new Button({
       text: 'Yes',
@@ -5671,14 +6738,20 @@ PopoverSubmit = (function(_super) {
 module.exports = PopoverSubmit;
 
 
-},{"../../buttons/Button":6,"../../tip/Popover":97}],55:[function(require,module,exports){
+},{"../../buttons/Button":6,"../../tip/Popover":118}],64:[function(require,module,exports){
 miwo.registerExtension('miwo-ui', require('./DiExtension'));
 
+miwo.translator.setTranslates('en', 'miwo', require('./translates'));
+
 Miwo.ui = {};
+
+Miwo.drag = require('./drag');
 
 Miwo.notify = require('./notify');
 
 Miwo.buttons = require('./buttons');
+
+Miwo.navbar = require('./navbar');
 
 Miwo.dropdown = require('./dropdown');
 
@@ -5686,9 +6759,11 @@ Miwo.input = require('./input');
 
 Miwo.picker = require('./picker');
 
-Miwo.nav = require('./nav');
+Miwo.pagination = require('./pagination');
 
 Miwo.form = require('./form');
+
+Miwo.panel = require('./panel');
 
 Miwo.window = require('./window');
 
@@ -5714,8 +6789,92 @@ Miwo.Tabs = Miwo.tabs.Tabs;
 
 Miwo.Grid = Miwo.grid.Grid;
 
+Miwo.Pane = Miwo.panel.Pane;
 
-},{"./DiExtension":1,"./buttons":10,"./dropdown":14,"./form":37,"./grid":51,"./input":67,"./nav":70,"./notify":72,"./picker":81,"./progress":85,"./selection":91,"./tabs":94,"./tip":101,"./utils":107,"./window":113}],56:[function(require,module,exports){
+
+},{"./DiExtension":1,"./buttons":10,"./drag":13,"./dropdown":18,"./form":45,"./grid":60,"./input":81,"./navbar":84,"./notify":86,"./pagination":90,"./panel":93,"./picker":102,"./progress":106,"./selection":112,"./tabs":115,"./tip":122,"./translates":123,"./utils":128,"./window":134}],65:[function(require,module,exports){
+var BaseTextInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseTextInput = (function(_super) {
+  __extends(BaseTextInput, _super);
+
+  function BaseTextInput() {
+    return BaseTextInput.__super__.constructor.apply(this, arguments);
+  }
+
+  BaseTextInput.prototype.isInput = true;
+
+  BaseTextInput.prototype.el = 'input';
+
+  BaseTextInput.prototype.focusEl = true;
+
+  BaseTextInput.prototype.disabled = false;
+
+  BaseTextInput.prototype.readonly = false;
+
+  BaseTextInput.prototype.placeholder = null;
+
+  BaseTextInput.prototype.tabindex = 0;
+
+  BaseTextInput.prototype.inputName = null;
+
+  BaseTextInput.prototype.componentCls = 'form-control';
+
+  BaseTextInput.prototype.setValue = function(value) {
+    this.el.set("value", value);
+  };
+
+  BaseTextInput.prototype.getValue = function() {
+    return this.el.get("value");
+  };
+
+  BaseTextInput.prototype.setDisabled = function(disabled) {
+    this.disabled = disabled;
+    this.el.set("disabled", this.disabled);
+  };
+
+  BaseTextInput.prototype.setReadonly = function(readonly) {
+    this.readonly = readonly;
+    this.el.set("readonly", this.readonly);
+  };
+
+  BaseTextInput.prototype.setPlaceholder = function(placeholder) {
+    this.placeholder = placeholder;
+    this.el.set("placeholder", this.placeholder);
+  };
+
+  BaseTextInput.prototype.getInputEl = function() {
+    return this.el;
+  };
+
+  BaseTextInput.prototype.getInputId = function() {
+    return this.id;
+  };
+
+  BaseTextInput.prototype.doRender = function() {
+    this.el.set("tabindex", this.tabindex);
+    this.el.set("name", this.inputName || this.name);
+    if (this.placeholder !== null) {
+      this.el.set("placeholder", this.placeholder);
+    }
+    if (this.readonly) {
+      this.el.set("readonly", this.readonly);
+    }
+    if (this.disabled) {
+      this.el.set("disabled", this.disabled);
+    }
+  };
+
+  return BaseTextInput;
+
+})(Miwo.Component);
+
+module.exports = BaseTextInput;
+
+
+},{}],66:[function(require,module,exports){
 var Checkbox,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5729,7 +6888,9 @@ Checkbox = (function(_super) {
 
   Checkbox.prototype.isInput = true;
 
-  Checkbox.prototype.xtype = 'checkbox';
+  Checkbox.prototype.xtype = 'checkboxinput';
+
+  Checkbox.prototype.baseCls = 'checkbox';
 
   Checkbox.prototype.label = '';
 
@@ -5741,13 +6902,14 @@ Checkbox = (function(_super) {
 
   Checkbox.prototype.iconEl = null;
 
+  Checkbox.prototype.checkerEl = null;
+
   Checkbox.prototype.labelEl = null;
 
   Checkbox.prototype.textEl = null;
 
   Checkbox.prototype.doRender = function() {
-    this.el.addClass('checkbox');
-    this.el.set('html', '<label miwo-reference="labelEl" for="' + this.getInputId() + '">' + '<span class="checker">' + '<i miwo-reference="iconEl" class="fa"></i>' + '<input miwo-reference="inputEl" type="checkbox" id="' + this.getInputId() + '">' + '</span>' + '<span miwo-reference="textEl" class="label-text">' + this.label + '</span>' + '</label>');
+    this.el.set('html', "<label miwo-reference=\"labelEl\" for='" + (this.getInputId()) + "'>\n	<span miwo-reference=\"checkerEl\" class=\"checker\" tabindex=\"0\">\n		<i miwo-reference=\"iconEl\" class=\"fa\"></i>\n		<input miwo-reference=\"inputEl\" type=\"checkbox\" id='" + (this.getInputId()) + "' tabindex=\"-1\">\n	</span>\n	<span miwo-reference=\"textEl\" class=\"label-text\">" + this.label + "</span>\n</label>");
   };
 
   Checkbox.prototype.afterRender = function() {
@@ -5759,6 +6921,7 @@ Checkbox = (function(_super) {
         }
         _this.setChecked(_this.getValue());
         _this.emit('change', _this, _this.getValue());
+        _this.setFocus();
       };
     })(this));
     this.inputEl.on('focus', (function(_this) {
@@ -5766,8 +6929,26 @@ Checkbox = (function(_super) {
         if (_this.disabled) {
           return;
         }
-        _this.el.addClass('focus');
-        _this.emit('focus', _this);
+        _this.setFocus();
+      };
+    })(this));
+    this.checkerEl.on('focus', (function(_this) {
+      return function() {
+        if (_this.disabled) {
+          return;
+        }
+        _this.setFocus();
+      };
+    })(this));
+    this.checkerEl.on('keydown', (function(_this) {
+      return function(e) {
+        if (_this.disabled) {
+          return;
+        }
+        if (e.key === 'space' || e.key === 'enter') {
+          e.stop();
+          _this.setChecked(!_this.checked);
+        }
       };
     })(this));
     this.inputEl.on('blur', (function(_this) {
@@ -5779,6 +6960,7 @@ Checkbox = (function(_super) {
         _this.emit('blur', _this);
       };
     })(this));
+    this.focusEl = this.checkerEl;
     this.setChecked(this.checked);
   };
 
@@ -5806,8 +6988,9 @@ Checkbox = (function(_super) {
     if (!this.rendered) {
       return;
     }
-    this.el.toggleClass('disabled', disabled);
-    this.inputEl.set('disabled', disabled);
+    this.el.toggleClass('disabled', this.disabled);
+    this.inputEl.set('disabled', this.disabled);
+    this.checkerEl.set('tabindex', -this.disabled);
   };
 
   Checkbox.prototype.setLabel = function(label) {
@@ -5841,7 +7024,7 @@ Checkbox = (function(_super) {
 module.exports = Checkbox;
 
 
-},{}],57:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 var Checkbox, CheckboxList,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5855,13 +7038,13 @@ CheckboxList = (function(_super) {
     return CheckboxList.__super__.constructor.apply(this, arguments);
   }
 
-  CheckboxList.prototype.xtype = 'checkboxlist';
+  CheckboxList.prototype.xtype = 'checkboxlistinput';
 
   CheckboxList.prototype.isInput = true;
 
   CheckboxList.prototype.inline = false;
 
-  CheckboxList.prototype.componentCls = 'checkboxlist';
+  CheckboxList.prototype.baseCls = 'checkboxlist';
 
   CheckboxList.prototype.setChecked = function(name, checked) {
     this.get(name).setChecked(checked);
@@ -5874,7 +7057,7 @@ CheckboxList = (function(_super) {
       disabled = name;
       this.components.each((function(_this) {
         return function(checkbox) {
-          return checkbox.setDisabled(disabled);
+          checkbox.setDisabled(disabled);
         };
       })(this));
     }
@@ -5883,7 +7066,7 @@ CheckboxList = (function(_super) {
   CheckboxList.prototype.setValue = function(value) {
     this.components.each((function(_this) {
       return function(checkbox, name) {
-        return checkbox.setChecked(value.indexOf(name) >= 0);
+        checkbox.setChecked(value.indexOf(name) >= 0);
       };
     })(this));
   };
@@ -5894,7 +7077,7 @@ CheckboxList = (function(_super) {
     this.components.each((function(_this) {
       return function(checkbox, name) {
         if (checkbox.isChecked() && !checkbox.disabled) {
-          return value.push(name);
+          value.push(name);
         }
       };
     })(this));
@@ -5955,7 +7138,7 @@ CheckboxList = (function(_super) {
 module.exports = CheckboxList;
 
 
-},{"./Checkbox":56}],58:[function(require,module,exports){
+},{"./Checkbox":66}],68:[function(require,module,exports){
 var Button, ColorInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -5986,14 +7169,16 @@ ColorInput = (function(_super) {
     this.inputEl = new Element('input', {
       id: this.getInputId(),
       cls: 'form-control',
-      type: 'color'
+      type: 'color',
+      tabindex: 0
     });
     this.inputEl.inject(this.el);
     this.resetBtn = new Button({
       icon: 'remove',
       handler: (function(_this) {
         return function() {
-          return _this.emit('reset', _this);
+          _this.emit('reset', _this);
+          return _this.setFocus();
         };
       })(this)
     });
@@ -6008,8 +7193,17 @@ ColorInput = (function(_super) {
 
   ColorInput.prototype.afterRender = function() {
     ColorInput.__super__.afterRender.call(this);
+    this.focusEl = this.inputEl;
     this.setDisabled(this.disabled);
     this.setResettable(this.resettable);
+    this.inputEl.on('keydown', (function(_this) {
+      return function(e) {
+        if (e.key === 'space' || e.key === 'enter') {
+          e.stop();
+          _this.openPicker();
+        }
+      };
+    })(this));
   };
 
   ColorInput.prototype.setValue = function(value) {
@@ -6086,6 +7280,7 @@ ColorInput = (function(_super) {
     popover.on('close', (function(_this) {
       return function() {
         _this.popover = null;
+        _this.setFocus();
       };
     })(this));
     return popover;
@@ -6113,63 +7308,64 @@ ColorInput = (function(_super) {
 module.exports = ColorInput;
 
 
-},{"../buttons/Button":6}],59:[function(require,module,exports){
-var Combo, ScreenMask,
+},{"../buttons/Button":6}],69:[function(require,module,exports){
+var ComboInput, ScreenMask,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 ScreenMask = require('../utils/ScreenMask');
 
-Combo = (function(_super) {
-  __extends(Combo, _super);
+ComboInput = (function(_super) {
+  __extends(ComboInput, _super);
 
-  Combo.prototype.isInput = true;
+  ComboInput.prototype.isInput = true;
 
-  Combo.prototype.xtype = 'combo';
+  ComboInput.prototype.xtype = 'comboinput';
 
-  Combo.prototype.role = 'combobox';
+  ComboInput.prototype.role = 'combobox';
 
-  Combo.prototype.hideSelected = true;
+  ComboInput.prototype.hideSelected = true;
 
-  Combo.prototype.multiple = false;
+  ComboInput.prototype.multiple = false;
 
-  Combo.prototype.height = null;
+  ComboInput.prototype.height = null;
 
-  Combo.prototype.placeholder = '';
+  ComboInput.prototype.placeholder = '';
 
-  Combo.prototype.prompt = false;
+  ComboInput.prototype.prompt = false;
 
-  Combo.prototype.items = null;
+  ComboInput.prototype.items = null;
 
-  Combo.prototype.disabled = false;
+  ComboInput.prototype.disabled = false;
 
-  Combo.prototype.opened = false;
+  ComboInput.prototype.opened = false;
 
-  Combo.prototype.inputEl = null;
+  ComboInput.prototype.inputEl = null;
 
-  Combo.prototype.resetEl = null;
+  ComboInput.prototype.resetEl = null;
 
-  Combo.prototype.dropdownEl = null;
+  ComboInput.prototype.dropdownEl = null;
 
-  Combo.prototype.dropdownItemsEl = null;
+  ComboInput.prototype.dropdownItemsEl = null;
 
-  Combo.prototype.activeItemIndex = -1;
+  ComboInput.prototype.activeItemIndex = -1;
 
-  Combo.prototype.activeValueIndex = -1;
+  ComboInput.prototype.activeValueIndex = -1;
 
-  Combo.prototype.active = false;
+  ComboInput.prototype.active = false;
 
-  Combo.prototype.screenMask = null;
+  ComboInput.prototype.screenMask = null;
 
-  function Combo(config) {
-    Combo.__super__.constructor.call(this, config);
+  function ComboInput(config) {
+    ComboInput.__super__.constructor.call(this, config);
     this.items = [];
     return;
   }
 
-  Combo.prototype.afterInit = function() {
-    Combo.__super__.afterInit.call(this);
-    this.el.set('html', '<div class="combo-input">' + '<span class="combo-input-text">' + this.placeholder + '</span>' + '<span class="combo-input-reset" style="display: none;"><i class="glyphicon glyphicon glyphicon-remove"></i></span>' + '<span class="combo-input-arrow"><i class="glyphicon glyphicon-chevron-down"></i></span>' + '</div>' + '<input class="screen-off" id="' + this.id + 'Input" type="text" role="button" aria-haspopup="true" aria-labelledby="' + this.id + 'Input" >');
+  ComboInput.prototype.afterInit = function() {
+    ComboInput.__super__.afterInit.call(this);
+    this.el.set('html', '<div class="combo-input">' + '<span class="combo-input-text">' + this.placeholder + '</span>' + '<span class="combo-input-reset" style="display: none;"><i class="glyphicon glyphicon glyphicon-remove"></i></span>' + '<span class="combo-input-arrow"><i class="glyphicon glyphicon-chevron-down"></i></span>' + '</div>' + '<input name="' + this.name + '" class="screen-off" id="' + this.id + '-input" type="text" role="button" aria-haspopup="true" aria-labelledby="' + this.id + '-input" tabindex="-1" >');
+    this.el.set('tabindex', 0);
     this.control = this.el.getElement('.combo-input');
     this.inputEl = this.el.getElement('input');
     this.textEl = this.el.getElement('.combo-input-text');
@@ -6188,7 +7384,7 @@ Combo = (function(_super) {
     });
   };
 
-  Combo.prototype.doRender = function() {
+  ComboInput.prototype.doRender = function() {
     this.el.addClass('form-control combo combo-empty');
     if (this.height) {
       this.el.setStyle('height', this.height);
@@ -6196,18 +7392,45 @@ Combo = (function(_super) {
     if (this.disabled) {
       this.el.addClass('disabled');
     }
-    this.el.on('click', (function(_this) {
+    this.el.on('mousedown', (function(_this) {
       return function(event) {
+        if (_this.disabled) {
+          event.stop();
+        }
+      };
+    })(this));
+    this.el.on('click', (function(_this) {
+      return function() {
         if (_this.disabled) {
           return;
         }
+        _this.setFocus();
         _this.open();
+      };
+    })(this));
+    this.el.on('focus', (function(_this) {
+      return function() {
+        if (_this.disabled) {
+          return;
+        }
+        _this.setFocus();
+      };
+    })(this));
+    this.el.on('blur', (function(_this) {
+      return function() {
+        if (_this.disabled) {
+          return;
+        }
+        _this.blur();
       };
     })(this));
     this.dropdownEl.on('click:relay(.combo-dropdown-item)', (function(_this) {
       return function(event, target) {
         var val;
         event.stop();
+        if (target.hasClass('disabled')) {
+          return;
+        }
         val = target.get('data-value');
         _this.setValue((_this.multiple ? _this.getValue().include(val) : val));
         _this.close();
@@ -6216,6 +7439,9 @@ Combo = (function(_super) {
     this.dropdownEl.on('mouseenter:relay(.combo-dropdown-item)', (function(_this) {
       return function(event, target) {
         event.stop();
+        if (target.hasClass('disabled')) {
+          return;
+        }
         _this.activateItem(target.get('data-index'));
       };
     })(this));
@@ -6226,6 +7452,9 @@ Combo = (function(_super) {
           return;
         }
         event.stop();
+        if (target.hasClass('disabled')) {
+          return;
+        }
         val = target.get('data-value');
         _this.setValue(_this.getValue().erase(val));
       };
@@ -6236,6 +7465,9 @@ Combo = (function(_super) {
           return;
         }
         event.stop();
+        if (target.hasClass('disabled')) {
+          return;
+        }
         _this.activateValue(parseInt(target.get('data-index')));
       };
     })(this));
@@ -6245,6 +7477,9 @@ Combo = (function(_super) {
           return;
         }
         event.stop();
+        if (target.hasClass('disabled')) {
+          return;
+        }
         _this.activateValue(-1);
       };
     })(this));
@@ -6257,15 +7492,7 @@ Combo = (function(_super) {
         _this.setValue();
       };
     })(this));
-    this.inputEl.on('focus', (function(_this) {
-      return function(event) {
-        if (_this.disabled) {
-          return;
-        }
-        _this.setFocus(true);
-      };
-    })(this));
-    this.keyListener = new Miwo.utils.KeyListener(miwo.body, 'keydown');
+    this.keyListener = new Miwo.utils.KeyListener(this.el, 'keydown');
     this.keyListener.on('esc', (function(_this) {
       return function() {
         if (_this.disabled) {
@@ -6324,12 +7551,12 @@ Combo = (function(_super) {
           return;
         }
         if (!_this.opened) {
-          if ((item = _this.getActiveValue())) {
+          if ((item = _this.getActiveValue()) && !item.hasClass('disabled')) {
             val = item.get('data-value');
             _this.setValue(_this.getValue().erase(val));
           } else {
-            _this.activeteLastValue();
-            if ((item = _this.getActiveValue())) {
+            _this.activateLastValue();
+            if ((item = _this.getActiveValue()) && !item.hasClass('disabled')) {
               val = item.get('data-value');
               _this.setValue(_this.getValue().erase(val));
             }
@@ -6345,13 +7572,13 @@ Combo = (function(_super) {
           return;
         }
         if (_this.opened) {
-          if ((item = _this.getActiveItem())) {
+          if ((item = _this.getActiveItem()) && !item.hasClass('disabled')) {
             val = item.get('data-value');
             _this.setValue((_this.multiple ? _this.getValue().include(val) : val));
             _this.close();
           }
         } else if (!_this.opened) {
-          if ((item = _this.getActiveValue())) {
+          if ((item = _this.getActiveValue()) && !item.hasClass('disabled')) {
             val = item.get('data-value');
             _this.setValue(_this.getValue().erase(val));
           } else {
@@ -6361,38 +7588,18 @@ Combo = (function(_super) {
         return true;
       };
     })(this));
-    this.keyListener.pause();
+    this.focusEl = this.el;
   };
 
-  Combo.prototype.getInputEl = function() {
+  ComboInput.prototype.getInputEl = function() {
     return this.inputEl;
   };
 
-  Combo.prototype.getInputId = function() {
-    return this.id + 'Input';
+  ComboInput.prototype.getInputId = function() {
+    return this.id + '-input';
   };
 
-  Combo.prototype.setFocus = function(silent) {
-    this.active = true;
-    this.el.addClass('active');
-    if (!silent) {
-      this.el.setFocus();
-    }
-    this.keyListener.resume();
-    miwo.body.on('click', this.bound('onBodyClick'));
-  };
-
-  Combo.prototype.blur = function(silent) {
-    this.active = false;
-    this.el.removeClass('active');
-    if (!silent) {
-      this.el.blur();
-    }
-    this.keyListener.pause();
-    miwo.body.un('click', this.bound('onBodyClick'));
-  };
-
-  Combo.prototype.setValue = function(value) {
+  ComboInput.prototype.setValue = function(value, silent) {
     var content, i, inputValue, item, selected, v, _i, _j, _len, _len1, _ref;
     if (value === void 0 || value === null) {
       value = '';
@@ -6416,7 +7623,12 @@ Combo = (function(_super) {
     this.textEl.set('html', inputValue ? content : this.placeholder);
     if (this.inputEl.get('value') !== inputValue) {
       this.inputEl.set('value', inputValue);
-      this.inputEl.emit('change');
+      if (!silent) {
+        this.inputEl.emit('change');
+      }
+      if (!silent) {
+        this.emit('change', this);
+      }
     }
     this.activeValueIndex = -1;
     if (this.hideSelected) {
@@ -6431,7 +7643,7 @@ Combo = (function(_super) {
     this.resetEl.setVisible(!this.disabled && this.prompt && value[0] !== void 0 && value[0] !== '');
   };
 
-  Combo.prototype.getValue = function() {
+  ComboInput.prototype.getValue = function() {
     var value;
     value = this.inputEl.get('value');
     if (this.multiple) {
@@ -6445,7 +7657,7 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.getItemText = function(value) {
+  ComboInput.prototype.getItemText = function(value) {
     var el;
     el = this.dropdownEl.getElement('[data-value="' + value + '"]');
     if (el) {
@@ -6455,7 +7667,7 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.addOption = function(value, text, content) {
+  ComboInput.prototype.addOption = function(value, text, content) {
     var item;
     item = new Element('div', {
       cls: 'combo-dropdown-item',
@@ -6471,7 +7683,7 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.addOptions = function(items) {
+  ComboInput.prototype.addOptions = function(items) {
     var item, _i, _len;
     for (_i = 0, _len = items.length; _i < _len; _i++) {
       item = items[_i];
@@ -6479,26 +7691,34 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.setOptions = function(items) {
+  ComboInput.prototype.setOptions = function(items) {
     this.clear();
-    this.setOptions(items);
+    this.addOptions(items);
   };
 
-  Combo.prototype.setPrompt = function(text) {
+  ComboInput.prototype.setOptionDisabled = function(name, disabled) {
+    this.getOption(name).toggleClass('disabled', disabled);
+  };
+
+  ComboInput.prototype.getOption = function(name) {
+    return this.dropdownItemsEl.getElement('[data-value="' + name + '"]');
+  };
+
+  ComboInput.prototype.setPrompt = function(text) {
     this.prompt = text;
   };
 
-  Combo.prototype.clear = function() {
+  ComboInput.prototype.clear = function() {
     this.items.empty();
     this.dropdownItemsEl.empty();
   };
 
-  Combo.prototype.setDisabled = function(disabled) {
-    Combo.__super__.setDisabled.call(this, disabled);
+  ComboInput.prototype.setDisabled = function(disabled) {
+    ComboInput.__super__.setDisabled.call(this, disabled);
     this.el.toggleClass('disabled', disabled);
   };
 
-  Combo.prototype.open = function() {
+  ComboInput.prototype.open = function() {
     var pos, size;
     if (this.opened) {
       return;
@@ -6521,7 +7741,7 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.close = function() {
+  ComboInput.prototype.close = function() {
     if (!this.opened) {
       return;
     }
@@ -6530,13 +7750,14 @@ Combo = (function(_super) {
     this.dropdownEl.removeClass('active');
     this.dropdownEl.dispose();
     this.screenMask.hide();
+    this.setFocus();
   };
 
-  Combo.prototype.getActiveItem = function() {
+  ComboInput.prototype.getActiveItem = function() {
     return this.items[this.activeItemIndex] || null;
   };
 
-  Combo.prototype.activateItem = function(index) {
+  ComboInput.prototype.activateItem = function(index) {
     if (this.activeItemIndex >= 0) {
       this.items[this.activeItemIndex].removeClass('active');
       this.activeItemIndex = -1;
@@ -6547,13 +7768,13 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.activatePrevItem = function() {
+  ComboInput.prototype.activatePrevItem = function() {
     var activateIndex, index, item, _i, _len, _ref;
     activateIndex = null;
     _ref = this.items;
     for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
       item = _ref[index];
-      if (!item.hasClass('selected') && index < this.activeItemIndex) {
+      if (!item.hasClass('selected') && !item.hasClass('disabled') && index < this.activeItemIndex) {
         activateIndex = index;
       }
     }
@@ -6562,13 +7783,13 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.activateNextItem = function() {
+  ComboInput.prototype.activateNextItem = function() {
     var activateIndex, index, item, _i, _len, _ref;
     activateIndex = null;
     _ref = this.items;
     for (index = _i = 0, _len = _ref.length; _i < _len; index = ++_i) {
       item = _ref[index];
-      if (!item.hasClass('selected') && index > this.activeItemIndex) {
+      if (!item.hasClass('selected') && !item.hasClass('disabled') && index > this.activeItemIndex) {
         activateIndex = index;
         break;
       }
@@ -6578,15 +7799,15 @@ Combo = (function(_super) {
     }
   };
 
-  Combo.prototype.getValueElAt = function(index) {
+  ComboInput.prototype.getValueElAt = function(index) {
     return this.textEl.getElement('li:nth-child(' + (index + 1) + ')');
   };
 
-  Combo.prototype.getActiveValue = function() {
+  ComboInput.prototype.getActiveValue = function() {
     return this.getValueElAt(this.activeValueIndex) || null;
   };
 
-  Combo.prototype.activateValue = function(index) {
+  ComboInput.prototype.activateValue = function(index) {
     var activeItem, item;
     if (this.activeValueIndex >= 0) {
       activeItem = this.getValueElAt(this.activeValueIndex);
@@ -6594,12 +7815,14 @@ Combo = (function(_super) {
     }
     if (index >= 0 && index < this.getValue().length) {
       item = this.getValueElAt(index);
-      item.addClass('active');
-      this.activeValueIndex = index;
+      if (!item.hasClass('disabled')) {
+        item.addClass('active');
+        this.activeValueIndex = index;
+      }
     }
   };
 
-  Combo.prototype.activatePrevValue = function() {
+  ComboInput.prototype.activatePrevValue = function() {
     var index;
     if (this.activeValueIndex < 0) {
       index = this.getValue().length - 1;
@@ -6609,7 +7832,7 @@ Combo = (function(_super) {
     this.activateValue(index);
   };
 
-  Combo.prototype.activateNextValue = function() {
+  ComboInput.prototype.activateNextValue = function() {
     var index;
     if (this.activeValueIndex < 0) {
       index = 0;
@@ -6619,33 +7842,96 @@ Combo = (function(_super) {
     this.activateValue(index);
   };
 
-  Combo.prototype.activeteLastValue = function() {
+  ComboInput.prototype.activateLastValue = function() {
     this.activateValue(this.getValue().length - 1);
   };
 
-  Combo.prototype.onBodyClick = function(event) {
-    var parents;
-    parents = event.target.getParents();
-    if (parents.indexOf(this.el) < 0 && parents.indexOf(this.dropdownMaskEl) < 0) {
-      this.blur();
-    }
-  };
-
-  Combo.prototype.doDestroy = function() {
+  ComboInput.prototype.doDestroy = function() {
     this.screenMask.destroy();
     this.keyListener.destroy();
-    miwo.body.un('click', this.bound('onBodyClick'));
-    return Combo.__super__.doDestroy.apply(this, arguments);
+    return ComboInput.__super__.doDestroy.apply(this, arguments);
   };
 
-  return Combo;
+  return ComboInput;
 
 })(Miwo.Component);
 
-module.exports = Combo;
+module.exports = ComboInput;
 
 
-},{"../utils/ScreenMask":106}],60:[function(require,module,exports){
+},{"../utils/ScreenMask":127}],70:[function(require,module,exports){
+var Composite,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Composite = (function(_super) {
+  __extends(Composite, _super);
+
+  function Composite() {
+    return Composite.__super__.constructor.apply(this, arguments);
+  }
+
+  Composite.prototype.xtype = 'composite';
+
+  Composite.prototype.componentCls = 'form-composite';
+
+  Composite.prototype.labelSeparator = ', ';
+
+  Composite.prototype.getInputs = function() {
+    return this.getComponents().toArray();
+  };
+
+  Composite.prototype.setValue = function(value) {
+    var input, _i, _len, _ref;
+    value = value || {};
+    _ref = this.getInputs();
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      input = _ref[_i];
+      if (value.hasOwnProperty(input.name)) {
+        input.setValue(value[input.name]);
+      }
+    }
+  };
+
+  Composite.prototype.getValue = function() {
+    var input, value, _i, _len, _ref;
+    value = {};
+    _ref = this.getInputs();
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      input = _ref[_i];
+      value[input.name] = input.getValue();
+    }
+    return value;
+  };
+
+  Composite.prototype.setDisabled = function(disabled) {
+    var input, _i, _len, _ref;
+    this.disabled = disabled;
+    _ref = this.getInputs();
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      input = _ref[_i];
+      input.setDisabled(this.disabled);
+    }
+  };
+
+  Composite.prototype.setReadonly = function(readonly) {
+    var input, _i, _len, _ref;
+    this.readonly = readonly;
+    _ref = this.getInputs();
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      input = _ref[_i];
+      input.setReadonly(this.readonly);
+    }
+  };
+
+  return Composite;
+
+})(Miwo.Container);
+
+module.exports = Composite;
+
+
+},{}],71:[function(require,module,exports){
 var DateInput, TextInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -6673,7 +7959,21 @@ DateInput = (function(_super) {
 
   DateInput.prototype.clearBtn = false;
 
+  DateInput.prototype.rangeSelector = null;
+
+  DateInput.prototype.rangeStart = null;
+
+  DateInput.prototype.rangeEnd = null;
+
   DateInput.prototype.popover = null;
+
+  DateInput.prototype.doInit = function() {
+    DateInput.__super__.doInit.apply(this, arguments);
+    this.startDate = this.parseDate(this.startDate);
+    this.endDate = this.parseDate(this.endDate);
+    this.rangeStart = this.parseDate(this.rangeStart) || null;
+    this.rangeEnd = this.parseDate(this.rangeEnd) || null;
+  };
 
   DateInput.prototype.afterRender = function() {
     DateInput.__super__.afterRender.apply(this, arguments);
@@ -6683,13 +7983,57 @@ DateInput = (function(_super) {
         return _this.openPicker();
       };
     })(this));
+    this.el.on('keydown', (function(_this) {
+      return function(e) {
+        return _this.onKeyDown(e);
+      };
+    })(this));
+  };
+
+  DateInput.prototype.onKeyDown = function(e) {
+    if (e.key.length === 1) {
+      e.stop();
+    } else if (e.key === 'up' || e.key === 'down' || e.key === 'left' || e.key === 'right') {
+      e.stop();
+      this.openPicker();
+    } else if (e.key === 'backspace') {
+      e.stop();
+      this.setValue('');
+    }
   };
 
   DateInput.prototype.setValue = function(value) {
-    if (Type.isDate(value)) {
-      value = this.formatDate(value);
+    if (value && !Type.isDate(value)) {
+      value = this.parseDate(value);
     }
-    DateInput.__super__.setValue.call(this, value);
+    DateInput.__super__.setValue.call(this, value ? this.formatDate(value) : '');
+    if (this.rangeSelector === 'start') {
+      this.setRange(value || false, null, true);
+    } else if (this.rangeSelector === 'end') {
+      this.setRange(null, value || false, true);
+    }
+  };
+
+  DateInput.prototype.setStartDate = function(date) {
+    this.startDate = this.parseDate(date);
+    if (this.popover) {
+      this.popover.get('picker').setStartDate(date);
+    }
+  };
+
+  DateInput.prototype.setEndDate = function(date) {
+    this.endDate = this.parseDate(date);
+    if (this.popover) {
+      this.popover.get('picker').setEndDate(date);
+    }
+  };
+
+  DateInput.prototype.setRange = function(rangeStart, rangeEnd, silent) {
+    this.rangeStart = rangeStart === false ? false : this.parseDate(rangeStart) || this.rangeStart;
+    this.rangeEnd = rangeEnd === false ? false : this.parseDate(rangeEnd) || this.rangeEnd;
+    if (this.popover) {
+      this.popover.get('picker').setRange(this.rangeStart, this.rangeEnd, silent);
+    }
   };
 
   DateInput.prototype.openPicker = function() {
@@ -6701,6 +8045,7 @@ DateInput = (function(_super) {
     }
     this.popover.show();
     this.popover.get('picker').setDate(this.parseDate(this.getValue()), true);
+    this.popover.get('picker').setFocus();
   };
 
   DateInput.prototype.hidePicker = function() {
@@ -6712,6 +8057,9 @@ DateInput = (function(_super) {
     popover = miwo.pickers.createPopoverPicker('date', {
       target: this.el,
       type: this.type,
+      rangeSelector: this.rangeSelector,
+      rangeStart: this.rangeStart || null,
+      rangeEnd: this.rangeEnd || null,
       startDate: this.startDate,
       endDate: this.endDate,
       todayBtn: this.todayBtn,
@@ -6721,12 +8069,13 @@ DateInput = (function(_super) {
       return function(picker, date) {
         _this.setValue(date);
         _this.hidePicker();
-        _this.emit('changed', _this, _this.getValue());
+        _this.emit('changed', _this, _this.getValue(), date);
       };
     })(this));
     popover.on('close', (function(_this) {
       return function() {
         _this.popover = null;
+        _this.setFocus();
       };
     })(this));
     return popover;
@@ -6738,11 +8087,17 @@ DateInput = (function(_super) {
 
   DateInput.prototype.parseDate = function(value) {
     var parts;
+    if (!value) {
+      return null;
+    }
+    if (Type.isDate(value)) {
+      return value;
+    }
     if (!value.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
       return null;
     }
     parts = value.split('-');
-    return new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
   };
 
   DateInput.prototype.doDestroy = function() {
@@ -6759,7 +8114,410 @@ DateInput = (function(_super) {
 module.exports = DateInput;
 
 
-},{"./Text":65}],61:[function(require,module,exports){
+},{"./Text":78}],72:[function(require,module,exports){
+var DateInput, DateRangeInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+DateInput = require('./Date');
+
+DateRangeInput = (function(_super) {
+  __extends(DateRangeInput, _super);
+
+  function DateRangeInput() {
+    return DateRangeInput.__super__.constructor.apply(this, arguments);
+  }
+
+  DateRangeInput.prototype.xtype = 'daterangeinput';
+
+  DateRangeInput.prototype.isInput = true;
+
+  DateRangeInput.prototype.placeholder = 'yyyy-mm-dd';
+
+  DateRangeInput.prototype.readonly = false;
+
+  DateRangeInput.prototype.startDate = null;
+
+  DateRangeInput.prototype.endDate = null;
+
+  DateRangeInput.prototype.todayBtn = false;
+
+  DateRangeInput.prototype.clearBtn = false;
+
+  DateRangeInput.prototype.baseCls = 'daterange';
+
+  DateRangeInput.prototype.doInit = function() {
+    DateRangeInput.__super__.doInit.apply(this, arguments);
+    this.value = [null, null];
+    this.startDate = this.parseDate(this.startDate);
+    this.endDate = this.parseDate(this.endDate);
+    this.add('start', this.createStartDate());
+    this.add('end', this.createEndDate());
+  };
+
+  DateRangeInput.prototype.setDisabled = function(disabled) {
+    this.get('start').setDisabled(disabled);
+    this.get('end').setDisabled(disabled);
+  };
+
+  DateRangeInput.prototype.setValue = function(value) {
+    if (!value) {
+      value = [null, null];
+    }
+    this.get('start').setValue(value[0]);
+    this.get('end').setValue(value[1]);
+    this.get('start').setRange(value[0], value[1]);
+    this.get('end').setRange(value[0], value[1]);
+  };
+
+  DateRangeInput.prototype.setStartDate = function(date) {
+    this.startDate = this.parseDate(date);
+    this.onDateLimitsChanged();
+  };
+
+  DateRangeInput.prototype.setEndDate = function(date) {
+    this.endDate = this.parseDate(date);
+    this.onDateLimitsChanged();
+  };
+
+  DateRangeInput.prototype.getValue = function() {
+    return [this.get('start').getValue(), this.get('end').getValue()];
+  };
+
+  DateRangeInput.prototype.getRange = function() {
+    var value;
+    value = this.getValue();
+    return [this.parseDate(value[0]), this.parseDate(value[1])];
+  };
+
+  DateRangeInput.prototype.getInputEl = function() {
+    return this.get('start').el;
+  };
+
+  DateRangeInput.prototype.getInputId = function() {
+    return this.get('start').id;
+  };
+
+  DateRangeInput.prototype.createStartDate = function() {
+    var input;
+    input = this.createInput('start');
+    input.on('changed', (function(_this) {
+      return function(component, value, date) {
+        _this.emit('changed', _this, _this.getValue());
+        _this.get('end').setRange(date, null, true);
+        _this.onDateLimitsChanged();
+      };
+    })(this));
+    return input;
+  };
+
+  DateRangeInput.prototype.createEndDate = function() {
+    var input;
+    input = this.createInput('end');
+    input.on('changed', (function(_this) {
+      return function(component, value, date) {
+        _this.emit('changed', _this, _this.getValue());
+        _this.get('start').setRange(null, date, true);
+        _this.onDateLimitsChanged();
+      };
+    })(this));
+    return input;
+  };
+
+  DateRangeInput.prototype.createInput = function(type) {
+    var input;
+    input = new DateInput({
+      id: this.id + '-' + type,
+      id: this.name + '-' + type,
+      cls: this.getBaseCls(type),
+      rangeSelector: type,
+      disabled: this.disabled,
+      readonly: this.readonly,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      placeholder: this.placeholder,
+      todayBtn: this.todayBtn,
+      clearBtn: this.clearBtn
+    });
+    return input;
+  };
+
+  DateRangeInput.prototype.onDateLimitsChanged = function() {
+    var range;
+    range = this.getRange();
+    this.get('end').setStartDate(this.startDate && this.startDate > range[0] ? this.startDate : range[0]);
+    this.get('start').setEndDate(this.endDate && this.endDate < range[1] ? this.endDate : range[1]);
+  };
+
+  DateRangeInput.prototype.doRender = function() {
+    this.get('start').render(this.el);
+    (new Element('span', {
+      cls: 'input-group-addon',
+      html: miwo.tr('miwo.inputs.dateTo')
+    })).inject(this.el);
+    this.get('end').render(this.el);
+  };
+
+  DateRangeInput.prototype.parseDate = function(value) {
+    var parts;
+    if (!value) {
+      return null;
+    }
+    if (Type.isDate(value)) {
+      return value;
+    }
+    if (!value.match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
+      return null;
+    }
+    parts = value.split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  };
+
+  return DateRangeInput;
+
+})(Miwo.Container);
+
+module.exports = DateRangeInput;
+
+
+},{"./Date":71}],73:[function(require,module,exports){
+var DropSelectInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+DropSelectInput = (function(_super) {
+  __extends(DropSelectInput, _super);
+
+  function DropSelectInput() {
+    return DropSelectInput.__super__.constructor.apply(this, arguments);
+  }
+
+  DropSelectInput.prototype.xtype = 'dropselectinput';
+
+  DropSelectInput.prototype.store = null;
+
+  DropSelectInput.prototype.keyProperty = 'id';
+
+  DropSelectInput.prototype.textProperty = null;
+
+  DropSelectInput.prototype.sourceTitle = '';
+
+  DropSelectInput.prototype.targetTitle = '';
+
+  DropSelectInput.prototype.sourceEmpty = '';
+
+  DropSelectInput.prototype.targetEmpty = '';
+
+  DropSelectInput.prototype.baseCls = 'dropselect';
+
+  DropSelectInput.prototype.afterInit = function() {
+    DropSelectInput.__super__.afterInit.apply(this, arguments);
+    this.store = miwo.store(this.store);
+    if (!this.textProperty) {
+      throw new Error("Undefined textProperty attribute");
+    }
+  };
+
+  DropSelectInput.prototype.setDisabled = function(disabled) {};
+
+  DropSelectInput.prototype.setValue = function(value, silent) {
+    this.loadItems(value, silent);
+  };
+
+  DropSelectInput.prototype.getValue = function() {
+    return this.getTargetKeys();
+  };
+
+  DropSelectInput.prototype.doRender = function() {
+    var buttonsCls, container, listCls, source, sourceCls, target, targetCls;
+    listCls = this.getBaseCls('list');
+    sourceCls = this.getBaseCls('source');
+    targetCls = this.getBaseCls('target');
+    buttonsCls = this.getBaseCls('buttons');
+    container = new Element('div', {
+      parent: this.el,
+      cls: 'controls row',
+      html: "<div class='col-md-5'>\n	<div class='" + listCls + " " + sourceCls + "'>\n		<h5>" + this.sourceTitle + "</h4>\n		<div class=\"items\"></div>\n		<div class=\"empty\"><span>" + this.sourceEmpty + "</span></div>\n	</div>\n</div>\n<div class='col-md-2 " + buttonsCls + " text-center'>\n	<button class=\"btn btn-default\" name=\"removeAll\"> << </button>\n	<button class=\"btn btn-default\" name=\"addAll\"> >> </button>\n</div>\n<div class='col-md-5'>\n	<div class='" + listCls + " " + targetCls + "'>\n		<h5>" + this.targetTitle + "</h4>\n		<div class=\"items\"></div>\n		<div class=\"empty\"><span>" + this.targetEmpty + "</span></div>\n	</div>\n</div>"
+    });
+    source = container.getElement('.' + sourceCls);
+    target = container.getElement('.' + targetCls);
+    this.sourceEmptyCt = source.getElement('.empty');
+    this.targetEmptyCt = target.getElement('.empty');
+    this.sourceEl = source = source.getElement('.items');
+    this.targetEl = target = target.getElement('.items');
+    container.on('click:relay(.item)', (function(_this) {
+      return function(event, target) {
+        event.stop();
+        target[target.hasClass('selected') ? 'removeClass' : 'addClass']('selected');
+      };
+    })(this));
+    source.on('click:relay(.item)', (function(_this) {
+      return function(event, item) {
+        event.stop();
+        _this.addItem(item);
+      };
+    })(this));
+    target.on('click:relay(.item)', (function(_this) {
+      return function(event, item) {
+        event.stop();
+        _this.removeItem(item);
+      };
+    })(this));
+    target.on('click', (function(_this) {
+      return function(event) {
+        if (event.target.hasClass(listCls)) {
+          target.getElements('.item.selected').removeClass('selected');
+        }
+      };
+    })(this));
+    source.on('click', (function(_this) {
+      return function(event) {
+        if (event.target.hasClass(listCls)) {
+          source.getElements('.item.selected').removeClass('selected');
+        }
+      };
+    })(this));
+    container.getElement('button[name="addAll"]').on('click', (function(_this) {
+      return function(e) {
+        e.stop();
+        _this.addAll();
+      };
+    })(this));
+    container.getElement('button[name="removeAll"]').on('click', (function(_this) {
+      return function(e) {
+        e.stop();
+        _this.removeAll();
+      };
+    })(this));
+  };
+
+  DropSelectInput.prototype.afterRender = function() {
+    DropSelectInput.__super__.afterRender.apply(this, arguments);
+    this.loadItems();
+  };
+
+  DropSelectInput.prototype.addItem = function(source) {
+    source.inject(this.targetEl);
+    source.removeClass('selected');
+    this.onItemsChanged();
+  };
+
+  DropSelectInput.prototype.addAll = function() {
+    var item, _i, _len, _ref;
+    _ref = this.sourceEl.getElements('.item');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      item.inject(this.targetEl);
+      item.removeClass('selected');
+    }
+    this.onItemsChanged();
+  };
+
+  DropSelectInput.prototype.addSelected = function() {
+    var item, _i, _len, _ref;
+    _ref = this.sourceEl.getElements('.selected');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      item.inject(this.targetEl);
+      item.removeClass('selected');
+    }
+    this.onItemsChanged();
+  };
+
+  DropSelectInput.prototype.removeItem = function(item) {
+    item.inject(this.sourceEl);
+    item.removeClass('selected');
+    this.onItemsChanged();
+  };
+
+  DropSelectInput.prototype.removeAll = function() {
+    var item, _i, _len, _ref;
+    _ref = this.targetEl.getElements('.item');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      item.inject(this.sourceEl);
+      item.removeClass('selected');
+    }
+    this.onItemsChanged();
+  };
+
+  DropSelectInput.prototype.removeSelected = function() {
+    var item, _i, _len, _ref;
+    _ref = this.targetEl.getElements('.selected');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      item.inject(this.sourceEl);
+      item.removeClass('selected');
+    }
+    this.onItemsChanged();
+  };
+
+  DropSelectInput.prototype.loadItems = function(values, silent) {
+    var id, item, _i, _len, _ref;
+    this.sourceEl.empty();
+    this.targetEl.empty();
+    this.store.each((function(_this) {
+      return function(record) {
+        var item;
+        item = new Element('div', {
+          cls: 'item',
+          parent: _this.sourceEl,
+          'data-id': record.get(_this.keyProperty),
+          html: record.get(_this.textProperty)
+        });
+      };
+    })(this));
+    if (values) {
+      _ref = this.sourceEl.getElements('.item');
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        id = item.get('data-id');
+        if (values.indexOf(id) >= 0) {
+          item.inject(this.targetEl);
+        }
+      }
+    }
+    this.onItemsChanged(silent);
+  };
+
+  DropSelectInput.prototype.getSourceKeys = function() {
+    var item, keys, _i, _len, _ref;
+    keys = [];
+    _ref = this.sourceEl.getElements('.item');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      keys.push(item.get('data-id'));
+    }
+    return keys;
+  };
+
+  DropSelectInput.prototype.getTargetKeys = function() {
+    var item, keys, _i, _len, _ref;
+    keys = [];
+    _ref = this.targetEl.getElements('.item');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
+      keys.push(item.get('data-id'));
+    }
+    return keys;
+  };
+
+  DropSelectInput.prototype.onItemsChanged = function(silent) {
+    this.sourceEmptyCt.setVisible(this.sourceEl.getElements('.item').length === 0);
+    this.targetEmptyCt.setVisible(this.targetEl.getElements('.item').length === 0);
+    if (!silent) {
+      this.emit('change', this);
+    }
+  };
+
+  return DropSelectInput;
+
+})(Miwo.Component);
+
+module.exports = DropSelectInput;
+
+
+},{}],74:[function(require,module,exports){
 var Radio,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -6789,7 +8547,7 @@ Radio = (function(_super) {
 
   Radio.prototype.doRender = function() {
     this.el.addClass('radio');
-    this.el.set('html', '<label miwo-reference="labelEl" for="' + this.getInputId() + '">' + '<span class="checker">' + '<i miwo-reference="iconEl" class="fa"></i>' + '<input miwo-reference="inputEl" type="radio" id="' + this.getInputId() + '" name="' + this.radioName + '" value="' + this.name + '" >' + '</span>' + '<span miwo-reference="textEl" class="label-text">' + this.label + '</span>' + '</label>');
+    this.el.set('html', '<label miwo-reference="labelEl" for="' + this.getInputId() + '">' + '<span miwo-reference="checkerEl" class="checker" tabindex="0">' + '<i miwo-reference="iconEl" class="fa"></i>' + '<input miwo-reference="inputEl" type="radio" id="' + this.getInputId() + '" name="' + this.radioName + '" value="' + this.name + '" tabindex="-1" >' + '</span>' + '<span miwo-reference="textEl" class="label-text">' + this.label + '</span>' + '</label>');
   };
 
   Radio.prototype.afterRender = function() {
@@ -6800,7 +8558,6 @@ Radio = (function(_super) {
           return;
         }
         _this.setChecked(_this.isChecked());
-        _this.emit('change', _this, _this.name);
       };
     })(this));
     this.inputEl.on('focus', (function(_this) {
@@ -6808,8 +8565,26 @@ Radio = (function(_super) {
         if (_this.disabled) {
           return;
         }
-        _this.el.addClass('focus');
-        _this.emit('focus', _this);
+        _this.setFocus();
+      };
+    })(this));
+    this.checkerEl.on('focus', (function(_this) {
+      return function() {
+        if (_this.disabled) {
+          return;
+        }
+        _this.setFocus();
+      };
+    })(this));
+    this.checkerEl.on('keydown', (function(_this) {
+      return function(e) {
+        if (_this.disabled) {
+          return;
+        }
+        if (e.key === 'space' || e.key === 'enter') {
+          e.stop();
+          _this.setChecked(!_this.isChecked());
+        }
       };
     })(this));
     this.inputEl.on('blur', (function(_this) {
@@ -6817,16 +8592,21 @@ Radio = (function(_super) {
         if (_this.disabled) {
           return;
         }
-        _this.el.removeClass('focus');
         _this.emit('blur', _this);
       };
     })(this));
+    this.focusEl = this.checkerEl;
     this.setDisabled(this.disabled);
     this.setChecked(this.checked);
   };
 
-  Radio.prototype.setChecked = function(checked) {
+  Radio.prototype.setChecked = function(checked, silent) {
+    var checkedOld;
+    checkedOld = this.checked;
     this.checked = checked;
+    if (!silent && checkedOld !== checked) {
+      this.emit('change', this, this.name);
+    }
     if (!this.rendered) {
       return;
     }
@@ -6885,39 +8665,39 @@ Radio = (function(_super) {
 module.exports = Radio;
 
 
-},{}],62:[function(require,module,exports){
-var Radio, RadioList,
+},{}],75:[function(require,module,exports){
+var Radio, RadioListInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 Radio = require('./Radio');
 
-RadioList = (function(_super) {
-  __extends(RadioList, _super);
+RadioListInput = (function(_super) {
+  __extends(RadioListInput, _super);
 
-  function RadioList() {
-    return RadioList.__super__.constructor.apply(this, arguments);
+  function RadioListInput() {
+    return RadioListInput.__super__.constructor.apply(this, arguments);
   }
 
-  RadioList.prototype.xtype = 'radioboxlist';
+  RadioListInput.prototype.xtype = 'radiolistinput';
 
-  RadioList.prototype.isInput = true;
+  RadioListInput.prototype.isInput = true;
 
-  RadioList.prototype.inline = false;
+  RadioListInput.prototype.inline = false;
 
-  RadioList.prototype.radioName = null;
+  RadioListInput.prototype.radioName = null;
 
-  RadioList.prototype.componentCls = 'radiolist';
+  RadioListInput.prototype.componentCls = 'radiolist';
 
-  RadioList.prototype.setChecked = function(name) {
+  RadioListInput.prototype.setChecked = function(name) {
     this.components.each((function(_this) {
       return function(radio) {
-        radio.setChecked(radio.name === name);
+        radio.setChecked(radio.name === name, true);
       };
     })(this));
   };
 
-  RadioList.prototype.setDisabled = function(name, disabled) {
+  RadioListInput.prototype.setDisabled = function(name, disabled) {
     if (Type.isString(name)) {
       this.get(name).setDisabled(disabled);
     } else {
@@ -6930,15 +8710,15 @@ RadioList = (function(_super) {
     }
   };
 
-  RadioList.prototype.setValue = function(value) {
+  RadioListInput.prototype.setValue = function(value) {
     this.components.each((function(_this) {
       return function(checkbox, name) {
-        checkbox.setChecked(value === name);
+        checkbox.setChecked(value === name, true);
       };
     })(this));
   };
 
-  RadioList.prototype.getValue = function() {
+  RadioListInput.prototype.getValue = function() {
     var value;
     value = null;
     this.components.each((function(_this) {
@@ -6951,11 +8731,11 @@ RadioList = (function(_super) {
     return value;
   };
 
-  RadioList.prototype.addItem = function(name, label) {
+  RadioListInput.prototype.addItem = function(name, label) {
     this.add(name, this.createRadio(name, label));
   };
 
-  RadioList.prototype.createRadio = function(name, label) {
+  RadioListInput.prototype.createRadio = function(name, label) {
     var radio;
     radio = new Radio({
       id: this.id + '-' + name,
@@ -6992,7 +8772,7 @@ RadioList = (function(_super) {
     return radio;
   };
 
-  RadioList.prototype.clear = function() {
+  RadioListInput.prototype.clear = function() {
     this.components.each((function(_this) {
       return function(component, name) {
         _this.removeComponent(name);
@@ -7001,15 +8781,15 @@ RadioList = (function(_super) {
     })(this));
   };
 
-  return RadioList;
+  return RadioListInput;
 
 })(Miwo.Container);
 
-module.exports = RadioList;
+module.exports = RadioListInput;
 
 
-},{"./Radio":61}],63:[function(require,module,exports){
-var OptionGroup, Select,
+},{"./Radio":74}],76:[function(require,module,exports){
+var OptionGroup, SelectInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -7024,7 +8804,8 @@ OptionGroup = (function(_super) {
     this.select = select;
     OptionGroup.__super__.constructor.call(this, config);
     this.el = new Element('optgroup', {
-      label: this.label
+      label: this.label,
+      parent: this.select.el
     });
     return;
   }
@@ -7048,127 +8829,128 @@ OptionGroup = (function(_super) {
 
 })(Miwo.Object);
 
-Select = (function(_super) {
-  __extends(Select, _super);
+SelectInput = (function(_super) {
+  __extends(SelectInput, _super);
 
-  function Select() {
-    return Select.__super__.constructor.apply(this, arguments);
+  function SelectInput() {
+    return SelectInput.__super__.constructor.apply(this, arguments);
   }
 
-  Select.prototype.isInput = true;
+  SelectInput.prototype.xtype = 'selectinput';
 
-  Select.prototype.el = 'select';
+  SelectInput.prototype.isInput = true;
 
-  Select.prototype.componentCls = 'form-control';
+  SelectInput.prototype.el = 'select';
 
-  Select.prototype.addOption = function(value, text) {
+  SelectInput.prototype.componentCls = 'form-control';
+
+  SelectInput.prototype.addOption = function(value, text) {
     var option;
     option = new Element('option', {
       value: value,
       html: text
     });
     option.inject(this.el);
+    return this;
   };
 
-  Select.prototype.addGroup = function(title) {
-    return OptionGroup(this, {
+  SelectInput.prototype.addGroup = function(title) {
+    return new OptionGroup(this, {
       label: title
     });
   };
 
-  Select.prototype.clear = function() {
+  SelectInput.prototype.clear = function() {
     this.el.empty();
   };
 
-  Select.prototype.setDisabled = function(disabled) {
-    Select.__super__.setDisabled.call(this, disabled);
+  SelectInput.prototype.setDisabled = function(disabled) {
+    SelectInput.__super__.setDisabled.call(this, disabled);
     this.el.toggleClass('disabled', disabled);
   };
 
-  Select.prototype.setValue = function(value) {
+  SelectInput.prototype.setValue = function(value) {
     this.el.set('value', value);
     return this;
   };
 
-  Select.prototype.getValue = function() {
+  SelectInput.prototype.getValue = function() {
     return this.el.get('value');
   };
 
-  Select.prototype.getInputEl = function() {
+  SelectInput.prototype.getInputEl = function() {
     return this.el;
   };
 
-  Select.prototype.getInputId = function() {
+  SelectInput.prototype.getInputId = function() {
     return this.id;
   };
 
-  return Select;
+  return SelectInput;
 
 })(Miwo.Component);
 
-module.exports = Select;
+module.exports = SelectInput;
 
 
-},{}],64:[function(require,module,exports){
-var Slider, Tooltip,
+},{}],77:[function(require,module,exports){
+var SliderInput, Tooltip,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 Tooltip = require('../tip/Tooltip');
 
-Slider = (function(_super) {
-  __extends(Slider, _super);
+SliderInput = (function(_super) {
+  __extends(SliderInput, _super);
 
-  function Slider() {
-    return Slider.__super__.constructor.apply(this, arguments);
+  function SliderInput() {
+    return SliderInput.__super__.constructor.apply(this, arguments);
   }
 
-  Slider.prototype.xtype = 'sliderinput';
+  SliderInput.prototype.xtype = 'sliderinput';
 
-  Slider.prototype.isInput = true;
+  SliderInput.prototype.isInput = true;
 
-  Slider.prototype.value = 0;
+  SliderInput.prototype.value = 0;
 
-  Slider.prototype.step = 1;
+  SliderInput.prototype.step = 1;
 
-  Slider.prototype.min = 0;
+  SliderInput.prototype.min = 0;
 
-  Slider.prototype.max = 100;
+  SliderInput.prototype.max = 100;
 
-  Slider.prototype.disabled = false;
+  SliderInput.prototype.disabled = false;
 
-  Slider.prototype.inputEl = null;
+  SliderInput.prototype.selectionEl = null;
 
-  Slider.prototype.selectionEl = null;
+  SliderInput.prototype.knobEl = null;
 
-  Slider.prototype.knobEl = null;
+  SliderInput.prototype.trackEl = null;
 
-  Slider.prototype.trackEl = null;
+  SliderInput.prototype.trackPos = null;
 
-  Slider.prototype.trackPos = null;
+  SliderInput.prototype.trackSize = null;
 
-  Slider.prototype.trackSize = null;
+  SliderInput.prototype.stepSize = null;
 
-  Slider.prototype.stepSize = null;
+  SliderInput.prototype.tooltipKnob = null;
 
-  Slider.prototype.tooltipKnob = null;
+  SliderInput.prototype.tooltipSelection = null;
 
-  Slider.prototype.tooltipSelection = null;
-
-  Slider.prototype.afterInit = function() {
-    Slider.__super__.afterInit.apply(this, arguments);
+  SliderInput.prototype.afterInit = function() {
+    SliderInput.__super__.afterInit.apply(this, arguments);
     if (this.min === null || this.max === null) {
       throw new Error("min or max properties are required");
     }
   };
 
-  Slider.prototype.doRender = function() {
+  SliderInput.prototype.doRender = function() {
     this.el.addClass('slider');
-    this.el.set('html', '<div miwo-reference="trackEl" class="slider-track">' + '<div miwo-reference="selectionEl" class="slider-selection"></div>' + '<div miwo-reference="knobEl" class="slider-knob"></div>' + '</div>' + '<input miwo-reference="inputEl" type="text" class="screen-off" id="' + this.getInputId() + '">');
+    this.el.set('html', '<div miwo-reference="trackEl" class="slider-track">' + '<div miwo-reference="selectionEl" class="slider-selection"></div>' + '<div miwo-reference="knobEl" class="slider-knob" tabindex="0"></div>' + '</div>');
   };
 
-  Slider.prototype.afterRender = function() {
-    Slider.__super__.afterRender.apply(this, arguments);
+  SliderInput.prototype.afterRender = function() {
+    SliderInput.__super__.afterRender.apply(this, arguments);
     this.tooltipKnob = new Tooltip({
       target: this.knobEl,
       placement: 'top',
@@ -7182,6 +8964,7 @@ Slider = (function(_super) {
     this.trackPos = this.trackEl.getPosition();
     this.trackSize = this.trackEl.getSize();
     this.stepSize = this.trackSize.x / (this.max - this.min);
+    this.focusEl = this.knobEl;
     this.knobEl.on('mousedown', (function(_this) {
       return function() {
         if (_this.disabled) {
@@ -7190,6 +8973,30 @@ Slider = (function(_super) {
         _this.active = true;
         _this.knobEl.addClass('active');
         _this.startDrag();
+      };
+    })(this));
+    this.knobEl.on('keydown', (function(_this) {
+      return function(e) {
+        if (_this.disabled) {
+          return;
+        }
+        switch (e.key) {
+          case 'left':
+            _this.decrease();
+            e.stop();
+            break;
+          case 'down':
+            _this.decrease();
+            e.stop();
+            break;
+          case 'right':
+            _this.increase();
+            e.stop();
+            break;
+          case 'up':
+            _this.increase();
+            e.stop();
+        }
       };
     })(this));
     this.trackEl.on('click', (function(_this) {
@@ -7229,32 +9036,36 @@ Slider = (function(_super) {
     this.setDisabled(this.disabled);
   };
 
-  Slider.prototype.startDrag = function() {
+  SliderInput.prototype.startDrag = function() {
     this.tooltipKnob.show();
     this.tooltipKnob.setText(this.getValue());
     miwo.body.on('mousemove', this.bound('onMouseMove'));
     miwo.body.on('mouseup', this.bound('onMouseUp'));
   };
 
-  Slider.prototype.stopDrag = function() {
+  SliderInput.prototype.stopDrag = function() {
     this.tooltipKnob.hide();
     miwo.body.un('mousemove', this.bound('onMouseMove'));
     miwo.body.on('mouseup', this.bound('onMouseUp'));
   };
 
-  Slider.prototype.onMouseUp = function() {
+  SliderInput.prototype.onMouseUp = function() {
     this.active = false;
     this.knobEl.removeClass('active');
     this.stopDrag();
+    this.onChange();
+  };
+
+  SliderInput.prototype.onChange = function() {
     this.emit('change', this, this.getValue());
   };
 
-  Slider.prototype.onMouseMove = function(event) {
+  SliderInput.prototype.onMouseMove = function(event) {
     this.setValueByEvent(event);
     this.tooltipKnob.setText(this.getValue());
   };
 
-  Slider.prototype.setValueByEvent = function(event) {
+  SliderInput.prototype.setValueByEvent = function(event) {
     var left, relativeValue, value;
     left = Math.max(0, Math.min(event.page.x - this.trackPos.x, this.trackSize.x));
     relativeValue = left / this.trackSize.x;
@@ -7262,63 +9073,71 @@ Slider = (function(_super) {
     this.setValue(value);
   };
 
-  Slider.prototype.setValue = function(value) {
+  SliderInput.prototype.setValue = function(value) {
     value = Math.round(value);
     if (this.step > 1) {
       value = parseInt(value / this.step) * this.step;
     }
     value = Math.min(this.max, Math.max(this.min, value));
+    if (this.value === value) {
+      return;
+    }
     this.value = value;
     if (!this.rendered) {
       return;
     }
     this.selectionEl.setStyle('width', (value - this.min) * this.stepSize);
     this.knobEl.setStyle('left', (value - this.min) * this.stepSize);
-    this.inputEl.set('value', value);
   };
 
-  Slider.prototype.getValue = function() {
-    if (this.rendered) {
-      return this.inputEl.get('value');
-    } else {
-      return this.value;
-    }
+  SliderInput.prototype.getValue = function() {
+    return this.value;
   };
 
-  Slider.prototype.setDisabled = function(disabled) {
+  SliderInput.prototype.decrease = function() {
+    this.setValue(this.value - this.step);
+  };
+
+  SliderInput.prototype.increase = function() {
+    this.setValue(this.value + this.step);
+  };
+
+  SliderInput.prototype.setDisabled = function(disabled) {
     this.disabled = disabled;
     if (!this.rendered) {
       return;
     }
-    this.el.toggleClass("disabled", disabled);
+    this.el.toggleClass('disabled', this.disabled);
   };
 
-  Slider.prototype.getInputEl = function() {
-    return this.inputEl;
+  SliderInput.prototype.parentShown = function() {
+    this.trackPos = this.trackEl.getPosition();
+    this.trackSize = this.trackEl.getSize();
+    this.stepSize = this.trackSize.x / (this.max - this.min);
+    this.selectionEl.setStyle('width', (this.value - this.min) * this.stepSize);
+    this.knobEl.setStyle('left', (this.value - this.min) * this.stepSize);
   };
 
-  Slider.prototype.getInputId = function() {
-    return this.id + '-input';
-  };
-
-  Slider.prototype.doDestroy = function() {
+  SliderInput.prototype.doDestroy = function() {
     this.stopDrag();
     this.tooltipKnob.destroy();
     this.tooltipSelection.destroy();
-    return Slider.__super__.doDestroy.apply(this, arguments);
+    return SliderInput.__super__.doDestroy.apply(this, arguments);
   };
 
-  return Slider;
+  return SliderInput;
 
 })(Miwo.Component);
 
-module.exports = Slider;
+module.exports = SliderInput;
 
 
-},{"../tip/Tooltip":99}],65:[function(require,module,exports){
-var TextInput,
+},{"../tip/Tooltip":120}],78:[function(require,module,exports){
+var BaseText, TextInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+BaseText = require('./BaseText');
 
 TextInput = (function(_super) {
   __extends(TextInput, _super);
@@ -7327,119 +9146,49 @@ TextInput = (function(_super) {
     return TextInput.__super__.constructor.apply(this, arguments);
   }
 
-  TextInput.prototype.xtype = 'textinput';
-
-  TextInput.prototype.isInput = true;
-
-  TextInput.prototype.el = 'input';
-
   TextInput.prototype.type = 'text';
-
-  TextInput.prototype.disabled = false;
-
-  TextInput.prototype.readonly = false;
 
   TextInput.prototype.autocomplete = null;
 
-  TextInput.prototype.placeholder = null;
-
-  TextInput.prototype.componentCls = 'form-control';
-
-  TextInput.prototype.setValue = function(value) {
-    this.el.set("value", value);
-  };
-
-  TextInput.prototype.getValue = function() {
-    return this.el.get("value");
-  };
-
-  TextInput.prototype.setDisabled = function(disabled) {
-    this.disabled = disabled;
-    this.el.set("disabled", disabled);
-  };
-
-  TextInput.prototype.getInputEl = function() {
-    return this.el;
-  };
-
-  TextInput.prototype.getInputId = function() {
-    return this.id;
-  };
-
   TextInput.prototype.doRender = function() {
+    TextInput.__super__.doRender.apply(this, arguments);
     this.el.set("type", this.type);
     if (this.autocomplete !== null) {
       this.el.set("autocomplete", this.autocomplete);
-    }
-    if (this.placeholder !== null) {
-      this.el.set("placeholder", this.placeholder);
-    }
-    if (this.readonly) {
-      this.el.set("readonly", this.readonly);
-    }
-    if (this.disabled) {
-      this.el.set("disabled", this.disabled);
     }
   };
 
   return TextInput;
 
-})(Miwo.Component);
+})(BaseText);
 
 module.exports = TextInput;
 
 
-},{}],66:[function(require,module,exports){
-var TextArea,
+},{"./BaseText":65}],79:[function(require,module,exports){
+var BaseText, TextAreaInput,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-TextArea = (function(_super) {
-  __extends(TextArea, _super);
+BaseText = require('./BaseText');
 
-  function TextArea() {
-    return TextArea.__super__.constructor.apply(this, arguments);
+TextAreaInput = (function(_super) {
+  __extends(TextAreaInput, _super);
+
+  function TextAreaInput() {
+    return TextAreaInput.__super__.constructor.apply(this, arguments);
   }
 
-  TextArea.prototype.xtype = 'textareainput';
+  TextAreaInput.prototype.xtype = 'textareainput';
 
-  TextArea.prototype.isInput = true;
+  TextAreaInput.prototype.el = 'textarea';
 
-  TextArea.prototype.el = 'textarea';
+  TextAreaInput.prototype.height = null;
 
-  TextArea.prototype.height = null;
+  TextAreaInput.prototype.resize = 'vertical';
 
-  TextArea.prototype.disabled = false;
-
-  TextArea.prototype.readonly = false;
-
-  TextArea.prototype.resize = 'vertical';
-
-  TextArea.prototype.setValue = function(value) {
-    this.el.set("value", value);
-  };
-
-  TextArea.prototype.getValue = function() {
-    return this.el.get("value");
-  };
-
-  TextArea.prototype.setDisabled = function(disabled) {
-    this.disabled = disabled;
-    this.el.set("disabled", disabled);
-  };
-
-  TextArea.prototype.getInputEl = function() {
-    return this.el;
-  };
-
-  TextArea.prototype.doRender = function() {
-    this.el.addClass('form-control');
-    if (this.readonly) {
-      this.el.set("readonly", this.readonly);
-    }
-    if (this.disabled) {
-      this.el.set("disabled", this.disabled);
-    }
+  TextAreaInput.prototype.doRender = function() {
+    TextAreaInput.__super__.doRender.apply(this, arguments);
     if (this.resize) {
       this.el.setStyle("resize", this.resize);
     }
@@ -7448,30 +9197,461 @@ TextArea = (function(_super) {
     }
   };
 
-  return TextArea;
+  return TextAreaInput;
+
+})(BaseText);
+
+module.exports = TextAreaInput;
+
+
+},{"./BaseText":65}],80:[function(require,module,exports){
+var ToggleInput,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+ToggleInput = (function(_super) {
+  __extends(ToggleInput, _super);
+
+  function ToggleInput() {
+    return ToggleInput.__super__.constructor.apply(this, arguments);
+  }
+
+  ToggleInput.prototype.xtype = 'toggleinput';
+
+  ToggleInput.prototype.isInput = true;
+
+  ToggleInput.prototype.baseCls = 'toggle';
+
+  ToggleInput.prototype.onState = 'success';
+
+  ToggleInput.prototype.offState = 'default';
+
+  ToggleInput.prototype.onText = 'ON';
+
+  ToggleInput.prototype.offText = 'OFF';
+
+  ToggleInput.prototype.value = false;
+
+  ToggleInput.prototype.disabled = false;
+
+  ToggleInput.prototype.readonly = false;
+
+  ToggleInput.prototype.size = 'md';
+
+  ToggleInput.prototype.beforeInit = function() {
+    ToggleInput.__super__.beforeInit.apply(this, arguments);
+    this.onText = miwo.tr('miwo.inputs.switchOn');
+    this.offText = miwo.tr('miwo.inputs.switchOff');
+  };
+
+  ToggleInput.prototype.toggle = function() {
+    this.setValue(!this.getValue());
+  };
+
+  ToggleInput.prototype.setValue = function(value, silent) {
+    var oldValue;
+    if (!silent) {
+      this.preventChange = false;
+      this.emit('beforechange', this);
+      if (this.preventChange) {
+        return;
+      }
+    }
+    oldValue = this.value;
+    this.value = value;
+    if (this.rendered) {
+      this.inputEl.set('checked', value);
+      this.textEl.set('html', value ? this.onText : this.offText);
+      this.el.toggleClass('toggle-on', value).toggleClass('toggle-off', !value).toggleClass('toggle-' + this.onState, value).toggleClass('toggle-' + this.offState, !value);
+    }
+    if (!silent && oldValue !== value) {
+      this.emit('change', this, value);
+    }
+  };
+
+  ToggleInput.prototype.getValue = function() {
+    if (this.rendered) {
+      return this.inputEl.get('checked');
+    } else {
+      return this.value;
+    }
+  };
+
+  ToggleInput.prototype.setDisabled = function(disabled) {
+    this.disabled = disabled;
+    if (!this.rendered) {
+      return;
+    }
+    this.el.toggleClass('disabled', this.disabled);
+    this.el.set('tabindex', -this.disabled);
+    this.inputEl.set('disabled', this.disabled);
+  };
+
+  ToggleInput.prototype.setReadonly = function(readonly) {
+    this.readonly = readonly;
+    if (!this.readonly) {
+      return;
+    }
+    this.el.toggleClass('readonly', this.readonly);
+  };
+
+  ToggleInput.prototype.getInputEl = function() {
+    return this.inputEl;
+  };
+
+  ToggleInput.prototype.getInputId = function() {
+    return this.id + '-input';
+  };
+
+  ToggleInput.prototype.doRender = function() {
+    this.el.addClass('input-' + this.size);
+    this.el.addClass('form-control');
+    this.el.set('tabindex', 0);
+    this.el.set('html', "<div miwo-reference=\"textEl\" class='toggle-text'></div>\n<div miwo-reference=\"handleEl\" class='toggle-handle'></div>\n<input id=\"" + (this.getInputId()) + "\" type=\"checkbox\" tabindex=\"-1\" miwo-reference=\"inputEl\" class='screen-off'>");
+  };
+
+  ToggleInput.prototype.afterRender = function() {
+    ToggleInput.__super__.afterRender.apply(this, arguments);
+    this.el.on('click', (function(_this) {
+      return function(e) {
+        e.stop();
+        if (_this.disabled) {
+          return;
+        }
+        _this.toggle();
+      };
+    })(this));
+    this.el.on('keydown', (function(_this) {
+      return function(e) {
+        if (_this.disabled) {
+          return;
+        }
+        if (e.key === 'left' || e.key === 'right' || e.key === 'space') {
+          e.stop();
+          if (e.key === 'left') {
+            _this.setValue(false);
+          }
+          if (e.key === 'right') {
+            _this.setValue(true);
+          }
+          if (e.key === 'space') {
+            _this.toggle();
+          }
+        }
+      };
+    })(this));
+    this.inputEl.on('focus', (function(_this) {
+      return function() {
+        if (_this.disabled) {
+          return;
+        }
+        _this.setFocus();
+      };
+    })(this));
+    this.setValue(this.value, true);
+    this.setDisabled(this.disabled);
+    this.setReadonly(this.readonly);
+  };
+
+  return ToggleInput;
 
 })(Miwo.Component);
 
-module.exports = TextArea;
+module.exports = ToggleInput;
 
 
-},{}],67:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 module.exports = {
   Checkbox: require('./Checkbox'),
   Radio: require('./Radio'),
   Select: require('./Select'),
   Combo: require('./Combo'),
   Date: require('./Date'),
+  DateRange: require('./DateRange'),
   Text: require('./Text'),
   Slider: require('./Slider'),
+  Toggle: require('./Toggle'),
   Color: require('./Color'),
   RadioList: require('./RadioList'),
   CheckboxList: require('./CheckboxList'),
-  TextArea: require('./TextArea')
+  TextArea: require('./TextArea'),
+  DropSelect: require('./DropSelect'),
+  Composite: require('./Composite')
 };
 
 
-},{"./Checkbox":56,"./CheckboxList":57,"./Color":58,"./Combo":59,"./Date":60,"./Radio":61,"./RadioList":62,"./Select":63,"./Slider":64,"./Text":65,"./TextArea":66}],68:[function(require,module,exports){
+},{"./Checkbox":66,"./CheckboxList":67,"./Color":68,"./Combo":69,"./Composite":70,"./Date":71,"./DateRange":72,"./DropSelect":73,"./Radio":74,"./RadioList":75,"./Select":76,"./Slider":77,"./Text":78,"./TextArea":79,"./Toggle":80}],82:[function(require,module,exports){
+var DropdownItem, DropdownList, Item,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Item = require('./Item');
+
+DropdownList = require('../dropdown/List');
+
+DropdownItem = (function(_super) {
+  __extends(DropdownItem, _super);
+
+  function DropdownItem() {
+    return DropdownItem.__super__.constructor.apply(this, arguments);
+  }
+
+  DropdownItem.prototype.dropdown = null;
+
+  DropdownItem.prototype.afterRender = function() {
+    DropdownItem.__super__.afterRender.apply(this, arguments);
+    this.el.set('aria-haspopup', true);
+    this.el.set('aria-expanded', false);
+  };
+
+  DropdownItem.prototype.getDropdown = function() {
+    if (!this.dropdown) {
+      this.dropdown = new DropdownList({
+        target: this.el
+      });
+      this.dropdown.el.set('aria-labelledby', this.id);
+    }
+    return this.dropdown;
+  };
+
+  DropdownItem.prototype.doRender = function() {
+    var caret;
+    DropdownItem.__super__.doRender.apply(this, arguments);
+    caret = new Element("span", {
+      cls: 'caret'
+    });
+    caret.inject(this.getContentEl());
+  };
+
+  DropdownItem.prototype.click = function() {
+    this.getDropdown().toggle();
+  };
+
+  DropdownItem.prototype.doDestroy = function() {
+    if (this.dropdown) {
+      this.dropdown.destroy();
+    }
+    return DropdownItem.__super__.doDestroy.apply(this, arguments);
+  };
+
+  return DropdownItem;
+
+})(Item);
+
+module.exports = DropdownItem;
+
+
+},{"../dropdown/List":17,"./Item":83}],83:[function(require,module,exports){
+var NavbarItem,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+NavbarItem = (function(_super) {
+  __extends(NavbarItem, _super);
+
+  function NavbarItem() {
+    return NavbarItem.__super__.constructor.apply(this, arguments);
+  }
+
+  NavbarItem.prototype.xtype = "navbaritem";
+
+  NavbarItem.prototype.isNavbarItem = true;
+
+  NavbarItem.prototype.handler = null;
+
+  NavbarItem.prototype.text = "";
+
+  NavbarItem.prototype.disabled = false;
+
+  NavbarItem.prototype.active = false;
+
+  NavbarItem.prototype.el = 'li';
+
+  NavbarItem.prototype.baseCls = 'dropdown';
+
+  NavbarItem.prototype.contentEl = 'a';
+
+  NavbarItem.prototype.setDisabled = function(disabled, silent) {
+    this.el.toggleClass('disabled', disabled);
+    this.el.set('tabindex', -disabled);
+    this.disabled = disabled;
+    if (!silent) {
+      if (disabled) {
+        this.emit('disabled', this);
+      } else {
+        this.emit('enabled', this);
+      }
+    }
+  };
+
+  NavbarItem.prototype.setText = function(text) {
+    this.text = text;
+    if (this.textEl) {
+      this.textEl.set("html", this.text);
+    }
+  };
+
+  NavbarItem.prototype.setActive = function(active, silent) {
+    this.el.toggleClass('active', active);
+    this.active = active;
+    if (!silent && active) {
+      this.emit('active', this, active);
+    }
+  };
+
+  NavbarItem.prototype.isActive = function() {
+    return this.active && !this.disabled;
+  };
+
+  NavbarItem.prototype.click = function(e) {
+    if (Type.isFunction(this.handler)) {
+      this.handler(this, e);
+    } else if (Type.isString(this.handler)) {
+      if (this.handler.indexOf('#') === 0) {
+        miwo.redirect(this.handler);
+      } else {
+        document.location = this.handler;
+      }
+    }
+  };
+
+  NavbarItem.prototype.doRender = function() {
+    if (this.active) {
+      this.el.addClass('active');
+    }
+    if (this.disabled) {
+      this.el.addClass('disabled');
+    }
+    if (this.disabled) {
+      this.el.set('tabindex', -1);
+    }
+    this.getContentEl().set('href', '#');
+    this.getContentEl().on("click", this.bound("onClick"));
+    this.textEl = new Element("span", {
+      html: this.text,
+      parent: this.getContentEl()
+    });
+  };
+
+  NavbarItem.prototype.onClick = function(e) {
+    e.stop();
+    if (this.disabled) {
+      return;
+    }
+    this.preventClick = false;
+    this.emit('beforeclick', this, e);
+    if (this.preventClick) {
+      return;
+    }
+    this.emit('click', this, e);
+    this.click(e);
+  };
+
+  return NavbarItem;
+
+})(Miwo.Component);
+
+module.exports = NavbarItem;
+
+
+},{}],84:[function(require,module,exports){
+module.exports = {
+  Item: require('./Item'),
+  DropdownItem: require('./DropdownItem')
+};
+
+
+},{"./DropdownItem":82,"./Item":83}],85:[function(require,module,exports){
+var Notification, Notificator,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Notification = window.Notification;
+
+Notificator = (function(_super) {
+  __extends(Notificator, _super);
+
+  function Notificator() {
+    return Notificator.__super__.constructor.apply(this, arguments);
+  }
+
+  Notificator.prototype.notification = null;
+
+  Notificator.prototype.initialize = function(config) {
+    Notificator.__super__.initialize.call(this, config);
+    window.on("beforeunload", (function(_this) {
+      return function() {
+        if (_this.notification) {
+          _this.notification.close();
+        }
+      };
+    })(this));
+  };
+
+  Notificator.prototype.requestPermission = function() {
+    if (Notification && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  };
+
+  Notificator.prototype.notify = function(config) {
+    var notification;
+    if (!Notification || Notification.permission !== "granted") {
+      return null;
+    }
+    notification = new Notification(config.title, {
+      body: config.message,
+      icon: config.icon
+    });
+    notification.handler = config.callback;
+    notification.onclick = (function(_this) {
+      return function() {
+        if (config.callback) {
+          config.callback();
+        }
+        notification.close();
+      };
+    })(this);
+    notification.onshow = (function(_this) {
+      return function() {
+        if (_this.notification === notification) {
+          _this.notification.close();
+        }
+        _this.notification = notification;
+      };
+    })(this);
+    notification.onclose = (function(_this) {
+      return function() {
+        if (_this.notification === notification) {
+          delete _this.notification;
+        }
+      };
+    })(this);
+    if (config.timeout) {
+      setTimeout((function(_this) {
+        return function() {
+          notification.close();
+        };
+      })(this), this.timeout);
+    }
+    this.notification = notification;
+    return notification;
+  };
+
+  return Notificator;
+
+})(Miwo.Object);
+
+module.exports = Notificator;
+
+
+},{}],86:[function(require,module,exports){
+module.exports = {
+  Notificator: require('./Notificator')
+};
+
+
+},{"./Notificator":85}],87:[function(require,module,exports){
 var Pager, Paginator,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -7515,17 +9695,17 @@ Pager = (function(_super) {
     this.mon(store, 'load', (function(_this) {
       return function() {
         _this.setDisabled(false);
-        _this.syncStore();
+        _this.syncPaginator();
       };
     })(this));
     if (store.loading) {
       this.setDisabled(true);
     } else if (store.loaded) {
-      this.syncStore();
+      this.syncPaginator();
     }
   };
 
-  Pager.prototype.syncStore = function() {
+  Pager.prototype.syncPaginator = function() {
     this.paginator.setItemsPerPage(this.store.pageSize);
     this.paginator.setItemCount(this.store.totalCount);
     this.paginator.setPage(this.store.page);
@@ -7601,7 +9781,57 @@ Pager = (function(_super) {
 module.exports = Pager;
 
 
-},{"../utils/Paginator":105}],69:[function(require,module,exports){
+},{"../utils/Paginator":126}],88:[function(require,module,exports){
+var PagerInfo,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+PagerInfo = (function(_super) {
+  __extends(PagerInfo, _super);
+
+  function PagerInfo() {
+    return PagerInfo.__super__.constructor.apply(this, arguments);
+  }
+
+  PagerInfo.prototype.xtype = 'pagerinfo';
+
+  PagerInfo.prototype.el = 'p';
+
+  PagerInfo.prototype.baseCls = 'pager-info';
+
+  PagerInfo.prototype.setStore = function(store) {
+    this.store = store;
+    this.mon(store, 'load', (function(_this) {
+      return function() {
+        if (_this.rendered) {
+          _this.redraw();
+        }
+      };
+    })(this));
+    if (this.rendered && store.loaded) {
+      this.redraw();
+    }
+  };
+
+  PagerInfo.prototype.doRender = function() {
+    var from, store, to;
+    store = this.store;
+    from = (store.page - 1) * store.pageSize;
+    to = Math.min(store.totalCount, from + store.pageSize);
+    this.el.set('html', miwo.tr('miwo.pagination.pageInfo').substitute({
+      visible: from + ' - ' + to,
+      total: store.totalCount
+    }));
+  };
+
+  return PagerInfo;
+
+})(Miwo.Component);
+
+module.exports = PagerInfo;
+
+
+},{}],89:[function(require,module,exports){
 var Paginator, UtilPaginator,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -7763,104 +9993,255 @@ Paginator = (function(_super) {
 module.exports = Paginator;
 
 
-},{"../utils/Paginator":105}],70:[function(require,module,exports){
+},{"../utils/Paginator":126}],90:[function(require,module,exports){
 module.exports = {
   Paginator: require('./Paginator'),
-  Pager: require('./Pager')
+  Pager: require('./Pager'),
+  PagerInfo: require('./PagerInfo')
 };
 
 
-},{"./Pager":68,"./Paginator":69}],71:[function(require,module,exports){
-var Notification, Notificator,
+},{"./Pager":87,"./PagerInfo":88,"./Paginator":89}],91:[function(require,module,exports){
+var Pane, Scrollable,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Notification = window.Notification;
+Scrollable = require('./Scrollable');
 
-Notificator = (function(_super) {
-  __extends(Notificator, _super);
+Pane = (function(_super) {
+  __extends(Pane, _super);
 
-  function Notificator() {
-    return Notificator.__super__.constructor.apply(this, arguments);
+  function Pane() {
+    return Pane.__super__.constructor.apply(this, arguments);
   }
 
-  Notificator.prototype.notification = null;
+  Pane.prototype.scrollable = false;
 
-  Notificator.prototype.initialize = function(config) {
-    Notificator.__super__.initialize.call(this, config);
-    window.on("beforeunload", (function(_this) {
-      return function() {
-        if (_this.notification) {
-          _this.notification.close();
-        }
+  Pane.prototype.scrollableOptions = null;
+
+  Pane.prototype.contentEl = 'div';
+
+  Pane.prototype.doInit = function() {
+    Pane.__super__.doInit.apply(this, arguments);
+    this.setScrollable(this.scrollable);
+  };
+
+  Pane.prototype.setScrollable = function(scrollable) {
+    this.scrollable = scrollable;
+    if (this.scrollable && !this.hasPlugin('scrollable')) {
+      this.installPlugin('scrollable', new Scrollable(this, this.scrollableOptions));
+    } else if (!this.scrollable && this.hasPlugin('scrollable')) {
+      this.uninstallPlugin('scrollable');
+    }
+  };
+
+  Pane.prototype.scrollTop = function() {
+    if (this.scrollable) {
+      this.getPlugin('scrollable').scrollTop();
+    }
+  };
+
+  Pane.prototype.scrollBottom = function() {
+    if (this.scrollable) {
+      this.getPlugin('scrollable').scrollBottom();
+    }
+  };
+
+  Pane.prototype.afterRender = function() {
+    Pane.__super__.afterRender.apply(this, arguments);
+    this.el.addClass('pane');
+    this.contentEl.addClass('pane-ct');
+  };
+
+  return Pane;
+
+})(Miwo.Container);
+
+module.exports = Pane;
+
+
+},{"./Scrollable":92}],92:[function(require,module,exports){
+var Scrollable, Slider,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+Slider = require('../drag/Slider');
+
+Scrollable = (function(_super) {
+  __extends(Scrollable, _super);
+
+  Scrollable.prototype.fade = true;
+
+  Scrollable.prototype.autoHide = true;
+
+  Scrollable.prototype.proportional = true;
+
+  Scrollable.prototype.proportionalMinHeight = 15;
+
+  function Scrollable(container, config) {
+    this.container = container;
+    Scrollable.__super__.constructor.call(this, config);
+    return;
+  }
+
+  Scrollable.prototype.scrollTop = function() {
+    this.scrollableBody.scrollTop = 0;
+    this.actualize();
+  };
+
+  Scrollable.prototype.scrollBottom = function() {
+    this.scrollableBody.scrollTop = this.scrollableBody.scrollHeight;
+    this.actualize();
+  };
+
+  Scrollable.prototype.afterRender = function() {
+    this.container.el.addClass('scrollable');
+    this.scrollableCt = this.container.scrollableCt || this.container.el;
+    this.scrollableBody = this.container.scrollableEl || this.container.getContentEl();
+    this.scrollableCt.addClass('scrollable-ct');
+    this.scrollableBody.addClass('scrollable-body');
+    this.scrollbar = new Element('div', {
+      parent: this.scrollableCt,
+      cls: 'scrollable-slider'
+    });
+    this.scrollbar.set('tween', {
+      duration: 50
+    });
+    this.knob = new Element('div', {
+      parent: this.scrollbar,
+      cls: 'scrollable-knob'
+    });
+    this.slider = new Slider(this.scrollbar, this.knob, {
+      mode: 'vertical'
+    });
+    this.slider.on('change', (function(_this) {
+      return function(step) {
+        _this.scrollableBody.scrollTop = (_this.scrollableBody.scrollHeight - _this.scrollableBody.offsetHeight) * step / 100;
       };
     })(this));
+    this.scrollableCt.on('mouseenter', this.bound('onElementMouseEnter'));
+    this.scrollableCt.on('mouseleave', this.bound('onElementMouseLeave'));
+    this.scrollableCt.on('mousewheel', this.bound('onElementMouseWheel'));
+    this.scrollableBody.on('Scrollable:contentHeightChange', this.bound('onContentHeightChange'));
+    this.knob.on('mousedown', this.bound('onKnobMouseDown'));
+    window.on('resize', this.bound('onWindowResize'));
+    window.on('mousewheel', this.bound('onWindowMouseWheel'));
+    this.scrollbar.fade('show');
+    if (this.autoHide) {
+      this.scrollbar.fade('hide');
+    }
+    this.actualize();
   };
 
-  Notificator.prototype.requestPermission = function() {
-    if (Notification && Notification.permission === 'default') {
-      Notification.requestPermission();
+  Scrollable.prototype.onElementMouseEnter = function() {
+    if (this.scrollableBody.scrollHeight > this.scrollableCt.offsetHeight) {
+      this.showContainer();
+    }
+    this.actualize();
+  };
+
+  Scrollable.prototype.onElementMouseLeave = function(e) {
+    if (!this.active) {
+      this.hideContainer();
     }
   };
 
-  Notificator.prototype.notify = function(config) {
-    var notification;
-    if (!Notification || Notification.permission !== "granted") {
-      return null;
+  Scrollable.prototype.onElementMouseWheel = function(e) {
+    var el;
+    e.preventDefault();
+    el = this.scrollableBody;
+    if (e.wheel < 0 && el.scrollTop < el.scrollHeight - el.offsetHeight || e.wheel > 0 && el.scrollTop > 0) {
+      el.scrollTop = el.scrollTop - e.wheel * 30;
+      this.actualize();
     }
-    notification = new Notification(config.title, {
-      body: config.message,
-      icon: config.icon
-    });
-    notification.handler = config.callback;
-    notification.onclick = (function(_this) {
-      return function() {
-        if (config.callback) {
-          config.callback();
-        }
-        notification.close();
-      };
-    })(this);
-    notification.onshow = (function(_this) {
-      return function() {
-        if (_this.notification === notification) {
-          _this.notification.close();
-        }
-        _this.notification = notification;
-      };
-    })(this);
-    notification.onclose = (function(_this) {
-      return function() {
-        if (_this.notification === notification) {
-          delete _this.notification;
-        }
-      };
-    })(this);
-    if (config.timeout) {
-      setTimeout((function(_this) {
-        return function() {
-          notification.close();
-        };
-      })(this), this.timeout);
-    }
-    this.notification = notification;
-    return notification;
   };
 
-  return Notificator;
+  Scrollable.prototype.onContentHeightChange = function() {
+    this.container.emit('heightchange', this.container);
+  };
+
+  Scrollable.prototype.onKnobMouseDown = function() {
+    this.active = true;
+    window.on('mouseup', this.bound('onWindowMouseUp'));
+  };
+
+  Scrollable.prototype.onWindowMouseUp = function(e) {
+    this.active = false;
+    window.un('mouseup', this.bound('onWindowMouseUp'));
+  };
+
+  Scrollable.prototype.onWindowResize = function() {
+    this.actualize.delay(50, this);
+  };
+
+  Scrollable.prototype.onWindowMouseWheel = function() {
+    if (this.scrollableBody.isVisible()) {
+      this.actualize();
+    }
+  };
+
+  Scrollable.prototype.actualize = function() {
+    var diff, el, knobHeight, minHeight, pos;
+    el = this.scrollableBody;
+    setTimeout((function(_this) {
+      return function() {
+        _this.size = el.getSize();
+        _this.position = el.getPosition();
+        _this.slider.updateSize();
+      };
+    })(this), 50);
+    if (this.proportional) {
+      if (isNaN(this.proportionalMinHeight) || this.proportionalMinHeight <= 0) {
+        throw new Error('Miwo.panel.Scrollpane::reposition(): option "proportionalMinHeight" is not a positive number.');
+      } else {
+        minHeight = Math.abs(this.proportionalMinHeight);
+        knobHeight = el.scrollHeight !== 0 ? el.offsetHeight * (el.offsetHeight / el.scrollHeight) : 0;
+        this.knob.setStyle('height', Math.max(knobHeight, minHeight));
+      }
+    }
+    diff = el.scrollHeight - el.offsetHeight;
+    pos = diff ? Math.round(el.scrollTop / diff * 100) : 0;
+    this.slider.setStep(pos);
+  };
+
+  Scrollable.prototype.showContainer = function(force) {
+    if (this.autoHide && this.fade && !this.active || force && this.fade) {
+      this.scrollbar.fade(0.6);
+    } else if (this.autoHide && !this.fade && !this.active || force && !this.fade) {
+      this.scrollbar.fade('show');
+    }
+  };
+
+  Scrollable.prototype.hideContainer = function(force) {
+    if (this.autoHide && this.fade && !this.active || force && this.fade) {
+      this.scrollbar.fade('out');
+    } else if (this.autoHide && !this.fade && !this.active || force && !this.fade) {
+      this.scrollbar.fade('hide');
+    }
+  };
+
+  Scrollable.prototype.doDestroy = function() {
+    window.un('resize', this.bound('onWindowResize'));
+    window.un('mousewheel', this.bound('onWindowMouseWheel'));
+    this.scrollbar.destroy();
+    return Scrollable.__super__.doDestroy.apply(this, arguments);
+  };
+
+  return Scrollable;
 
 })(Miwo.Object);
 
-module.exports = Notificator;
+module.exports = Scrollable;
 
 
-},{}],72:[function(require,module,exports){
+},{"../drag/Slider":12}],93:[function(require,module,exports){
 module.exports = {
-  Notificator: require('./Notificator')
+  Pane: require('./Pane'),
+  Scrollable: require('./Scrollable')
 };
 
 
-},{"./Notificator":71}],73:[function(require,module,exports){
+},{"./Pane":91,"./Scrollable":92}],94:[function(require,module,exports){
 var BaseDatePicker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -7926,6 +10307,12 @@ BaseDatePicker = (function(_super) {
     return this.selectedDate;
   };
 
+  BaseDatePicker.prototype.setFocus = function() {
+    if (this.panel) {
+      this.panel.setFocus();
+    }
+  };
+
   BaseDatePicker.prototype.select = function(date, silent) {
     if (date) {
       this.selectedDate = new Date(date.getTime());
@@ -7939,7 +10326,10 @@ BaseDatePicker = (function(_super) {
     if (!silent) {
       this.emit('selected', this, this.selectedDate);
     }
+    this.onSelected(this.selectedDate, silent);
   };
+
+  BaseDatePicker.prototype.onSelected = function(date, silent) {};
 
   BaseDatePicker.prototype.activate = function(year, month) {
     if (Type.isDate(year)) {
@@ -8083,10 +10473,12 @@ BaseDatePicker = (function(_super) {
         return true;
       };
     })(this));
-    if (this.selectedDate) {
-      this.focusedDate = new Date(this.selectedDate.getTime());
-    } else {
-      this.focusedDate = new Date(this.activeDate.getTime());
+    if (!this.focusedDate) {
+      if (this.selectedDate) {
+        this.focusedDate = new Date(this.selectedDate.getTime());
+      } else {
+        this.focusedDate = new Date(this.activeDate.getTime());
+      }
     }
     if (this.selectedDate) {
       this.activate(this.selectedDate);
@@ -8121,7 +10513,7 @@ BaseDatePicker = (function(_super) {
 module.exports = BaseDatePicker;
 
 
-},{}],74:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 var Color, ColorPicker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8299,7 +10691,7 @@ ColorPicker = (function(_super) {
 module.exports = ColorPicker;
 
 
-},{"../utils/Color":103}],75:[function(require,module,exports){
+},{"../utils/Color":124}],96:[function(require,module,exports){
 var DatePicker, DayPicker, MonthPicker, YearPicker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8323,6 +10715,12 @@ DatePicker = (function(_super) {
 
   DatePicker.prototype.selectedDate = null;
 
+  DatePicker.prototype.rangeStart = null;
+
+  DatePicker.prototype.rangeEnd = null;
+
+  DatePicker.prototype.rangeSelector = 'end';
+
   DatePicker.prototype.todayBtn = false;
 
   DatePicker.prototype.clearBtn = false;
@@ -8344,7 +10742,10 @@ DatePicker = (function(_super) {
       activeDate: this.activeDate,
       startDate: this.startDate,
       endDate: this.endDate,
-      selectedDate: this.selectedDate
+      selectedDate: this.selectedDate,
+      rangeStart: this.rangeStart,
+      rangeEnd: this.rangeEnd,
+      rangeSelector: this.rangeSelector
     });
     picker.on('switch', (function(_this) {
       return function() {
@@ -8434,6 +10835,10 @@ DatePicker = (function(_super) {
     });
   };
 
+  DatePicker.prototype.setRange = function(rangeStart, rangeEnd, silent) {
+    this.get('day').setRange(rangeStart, rangeEnd, silent);
+  };
+
   DatePicker.prototype.setTodayBtn = function(todayBtn) {
     this.todayBtn = todayBtn;
     if (this.rendered) {
@@ -8457,6 +10862,10 @@ DatePicker = (function(_super) {
       type = 'date';
     }
     this.type = type;
+  };
+
+  DatePicker.prototype.setFocus = function() {
+    this.get('day').setFocus();
   };
 
   DatePicker.prototype.doRender = function() {
@@ -8508,7 +10917,7 @@ DatePicker = (function(_super) {
 module.exports = DatePicker;
 
 
-},{"./Day":76,"./Month":78,"./Year":80}],76:[function(require,module,exports){
+},{"./Day":97,"./Month":98,"./Year":101}],97:[function(require,module,exports){
 var BaseDatePicker, DayPicker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8526,6 +10935,12 @@ DayPicker = (function(_super) {
 
   DayPicker.prototype.baseCls = 'daypicker';
 
+  DayPicker.prototype.rangeStart = null;
+
+  DayPicker.prototype.rangeEnd = null;
+
+  DayPicker.prototype.rangeSelector = null;
+
   DayPicker.prototype.beforeInit = function() {
     DayPicker.__super__.beforeInit.apply(this, arguments);
     this.moveIndex = {
@@ -8536,12 +10951,42 @@ DayPicker = (function(_super) {
     };
   };
 
+  DayPicker.prototype.setRange = function(rangeStart, rangeEnd, silent) {
+    this.rangeStart = rangeStart === false ? null : rangeStart || this.rangeStart;
+    this.rangeEnd = rangeEnd === false ? null : rangeEnd || this.rangeEnd;
+    if (!silent) {
+      this.emit('range', this, this.rangeStart, this.rangeEnd);
+    }
+    this.onRangeChanged(silent);
+    if (this.rendered) {
+      this.updateCalendar();
+    }
+  };
+
+  DayPicker.prototype.setStartDate = function(startDate) {
+    this.startDate = new Date(startDate.getTime());
+  };
+
+  DayPicker.prototype.setEndDate = function(endDate) {
+    this.endDate = new Date(endDate.getTime());
+  };
+
+  DayPicker.prototype.onRangeChanged = function(silent) {};
+
   DayPicker.prototype.activateNext = function() {
     this.activate(null, this.activeDate.getMonth() + 1);
   };
 
   DayPicker.prototype.activatePrev = function() {
     this.activate(null, this.activeDate.getMonth() - 1);
+  };
+
+  DayPicker.prototype.onSelected = function(silent) {
+    if (this.rangeSelector === 'end') {
+      this.setRange(null, this.selectedDate, silent);
+    } else if (this.rangeSelector === 'start') {
+      this.setRange(this.selectedDate, null, silent);
+    }
   };
 
   DayPicker.prototype.renderHeader = function() {
@@ -8557,7 +11002,7 @@ DayPicker = (function(_super) {
   };
 
   DayPicker.prototype.renderCalendar = function() {
-    var body, date, enabledNextFirstDay, enabledPrevLastDay, first, firstDay, i, index, item, j, lastDay, length, nextFirstDay, prevLastDay, td, toDay, tr, _i, _j, _k, _l, _m, _ref;
+    var body, date, enabledNextFirstDay, enabledPrevLastDay, first, firstDay, i, index, item, j, lastDay, length, nextFirstDay, prevLastDay, td, toDay, toDayDate, toDayIndex, tr, _i, _j, _k, _l, _m, _ref;
     date = this.activeDate;
     firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
     lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
@@ -8603,25 +11048,23 @@ DayPicker = (function(_super) {
           html: item.date.getDate(),
           'data-index': index
         });
-        if (item.foreign) {
-          td.addClass('inactive');
-        }
-        if (!this.isDayEnabled(item.date)) {
-          td.addClass('disabled');
-        }
-        if (this.isSelected(item.date)) {
-          td.addClass('selected');
-        }
         if (this.isFocused(item.date)) {
-          td.addClass('focus');
           this.focusedIndex = index;
+          this.focusedDate = item.date;
         }
         if (toDay === item.date.toDateString()) {
           td.addClass('today');
+          toDayIndex = index;
+          toDayDate = item.date;
         }
         item.index = index;
         item.cell = td;
       }
+    }
+    this.updateCalendar();
+    if (!this.focusedDate && toDayDate) {
+      this.focusedDate = toDayDate;
+      this.focusedIndex = toDayIndex;
     }
     enabledPrevLastDay = this.isDayEnabled(prevLastDay);
     enabledNextFirstDay = this.isDayEnabled(nextFirstDay);
@@ -8635,20 +11078,31 @@ DayPicker = (function(_super) {
     var i, item, _i;
     for (i = _i = 0; _i <= 41; i = ++_i) {
       item = this.items[i];
-      item.cell.toggleClass('inactive', item.foreign).toggleClass('disabled', !this.isDayEnabled(item.date)).toggleClass('selected', this.isSelected(item.date)).toggleClass('focus', this.isFocused(item.date));
+      item.cell.toggleClass('inactive', item.foreign).toggleClass('disabled', !this.isDayEnabled(item.date)).toggleClass('selected', this.isSelected(item.date)).toggleClass('focus', this.isFocused(item.date)).toggleClass('range-item', this.isDayInRange(item.date)).toggleClass('range-start', this.isSameDates(this.rangeStart, item.date)).toggleClass('range-end', this.isSameDates(this.rangeEnd, item.date));
     }
   };
 
   DayPicker.prototype.isSelected = function(date) {
-    return this.selectedDate !== null && this.selectedDate.toDateString() === date.toDateString();
+    return this.selectedDate !== null && this.isSameDates(this.selectedDate, date);
   };
 
   DayPicker.prototype.isFocused = function(date) {
-    return this.focusedDate !== null && this.focusedDate.toDateString() === date.toDateString();
+    return this.focusedDate !== null && this.isSameDates(this.focusedDate, date);
+  };
+
+  DayPicker.prototype.isDayInRange = function(date) {
+    return this.rangeStart !== null && this.rangeEnd !== null && this.rangeStart <= date && this.rangeEnd >= date;
+  };
+
+  DayPicker.prototype.isSameDates = function(dateA, dateB) {
+    return dateA !== null && dateB !== null && dateA.toDateString() === dateB.toDateString();
   };
 
   DayPicker.prototype.tryMoveFocus = function(index) {
     var date, focusedIndex;
+    if (!this.focusedDate) {
+      return;
+    }
     date = this.focusedDate.getDate();
     focusedIndex = this.focusedIndex;
     this.focusedIndex += index;
@@ -8682,70 +11136,7 @@ DayPicker = (function(_super) {
 module.exports = DayPicker;
 
 
-},{"./BaseDate":73}],77:[function(require,module,exports){
-var ColorPicker, DatePicker, PickerManager, Popover;
-
-Popover = require('../tip/Popover');
-
-ColorPicker = require('./Color');
-
-DatePicker = require('./Date');
-
-PickerManager = (function() {
-  function PickerManager() {}
-
-  PickerManager.prototype.createPopoverPicker = function(type, config) {
-    var factory;
-    factory = 'create' + type.capitalize() + 'Picker';
-    if (!this[factory]) {
-      throw new Error("Undefined factory function for '" + type + "' picker");
-    }
-    return this[factory](config);
-  };
-
-  PickerManager.prototype.createColorPicker = function(config) {
-    var popover;
-    popover = new Popover({
-      target: config.target,
-      closeMode: config.closeMode || 'close',
-      title: miwo.tr('miwo.pickers.selectColor'),
-      styles: {
-        maxWidth: 500
-      }
-    });
-    popover.add('picker', new ColorPicker(config));
-    return popover;
-  };
-
-  PickerManager.prototype.createDatePicker = function(config) {
-    var picker, popover;
-    popover = new Popover({
-      target: config.target,
-      closeMode: config.closeMode || 'close',
-      title: '',
-      styles: {
-        maxWidth: 500,
-        width: 320
-      }
-    });
-    picker = new DatePicker(config);
-    picker.on('switch', (function(_this) {
-      return function() {
-        popover.updatePosition();
-      };
-    })(this));
-    popover.add('picker', picker);
-    return popover;
-  };
-
-  return PickerManager;
-
-})();
-
-module.exports = PickerManager;
-
-
-},{"../tip/Popover":97,"./Color":74,"./Date":75}],78:[function(require,module,exports){
+},{"./BaseDate":94}],98:[function(require,module,exports){
 var BaseDatePicker, MonthPicker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -8865,11 +11256,73 @@ MonthPicker = (function(_super) {
 module.exports = MonthPicker;
 
 
-},{"./BaseDate":73}],79:[function(require,module,exports){
+},{"./BaseDate":94}],99:[function(require,module,exports){
+var ColorPicker, DatePicker, PickerManager, Popover;
+
+Popover = require('../tip/Popover');
+
+ColorPicker = require('./Color');
+
+DatePicker = require('./Date');
+
+PickerManager = (function() {
+  function PickerManager() {}
+
+  PickerManager.prototype.createPopoverPicker = function(type, config) {
+    var factory;
+    factory = 'create' + type.capitalize() + 'Picker';
+    if (!this[factory]) {
+      throw new Error("Undefined factory function for '" + type + "' picker");
+    }
+    return this[factory](config);
+  };
+
+  PickerManager.prototype.createColorPicker = function(config) {
+    var popover;
+    popover = new Popover({
+      target: config.target,
+      closeMode: config.closeMode || 'close',
+      title: miwo.tr('miwo.pickers.selectColor'),
+      styles: {
+        maxWidth: 500
+      }
+    });
+    popover.add('picker', new ColorPicker(config));
+    return popover;
+  };
+
+  PickerManager.prototype.createDatePicker = function(config) {
+    var picker, popover;
+    popover = new Popover({
+      target: config.target,
+      closeMode: config.closeMode || 'close',
+      title: '',
+      styles: {
+        width: 260
+      }
+    });
+    picker = new DatePicker(config);
+    picker.on('switch', (function(_this) {
+      return function() {
+        popover.updatePosition();
+      };
+    })(this));
+    popover.add('picker', picker);
+    return popover;
+  };
+
+  return PickerManager;
+
+})();
+
+module.exports = PickerManager;
+
+
+},{"../tip/Popover":118,"./Color":95,"./Date":96}],100:[function(require,module,exports){
 
 
 
-},{}],80:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 var BaseDatePicker, YearPicker,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9000,9 +11453,9 @@ YearPicker = (function(_super) {
 module.exports = YearPicker;
 
 
-},{"./BaseDate":73}],81:[function(require,module,exports){
+},{"./BaseDate":94}],102:[function(require,module,exports){
 module.exports = {
-  Manager: require('./Manager'),
+  PickerManager: require('./PickerManager'),
   Color: require('./Color'),
   Day: require('./Day'),
   Month: require('./Month'),
@@ -9012,7 +11465,7 @@ module.exports = {
 };
 
 
-},{"./Color":74,"./Date":75,"./Day":76,"./Manager":77,"./Month":78,"./Time":79,"./Year":80}],82:[function(require,module,exports){
+},{"./Color":95,"./Date":96,"./Day":97,"./Month":98,"./PickerManager":99,"./Time":100,"./Year":101}],103:[function(require,module,exports){
 var Bar,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9136,7 +11589,7 @@ Bar = (function(_super) {
 module.exports = Bar;
 
 
-},{}],83:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 var Bar, ProgressBar,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9192,7 +11645,7 @@ ProgressBar = (function(_super) {
 module.exports = ProgressBar;
 
 
-},{"./Bar":82}],84:[function(require,module,exports){
+},{"./Bar":103}],105:[function(require,module,exports){
 var Bar, StackedBar,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9219,7 +11672,7 @@ StackedBar = (function(_super) {
 module.exports = StackedBar;
 
 
-},{"./Bar":82}],85:[function(require,module,exports){
+},{"./Bar":103}],106:[function(require,module,exports){
 module.exports = {
   Bar: require('./Bar'),
   ProgressBar: require('./ProgressBar'),
@@ -9227,7 +11680,7 @@ module.exports = {
 };
 
 
-},{"./Bar":82,"./ProgressBar":83,"./StackedBar":84}],86:[function(require,module,exports){
+},{"./Bar":103,"./ProgressBar":104,"./StackedBar":105}],107:[function(require,module,exports){
 var BaseSelector,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9249,7 +11702,7 @@ BaseSelector = (function(_super) {
 
   BaseSelector.prototype.setGrid = function(grid) {
     this.grid = grid;
-    this.mon(grid, 'rendered', 'gridRendered');
+    this.mon(grid, 'render', 'gridRender');
     this.mon(grid, 'refresh', 'gridRefresh');
   };
 
@@ -9262,7 +11715,7 @@ BaseSelector = (function(_super) {
 
   BaseSelector.prototype.gridRefresh = function(grid) {};
 
-  BaseSelector.prototype.gridRendered = function(grid) {
+  BaseSelector.prototype.gridRender = function(grid) {
     grid.el.addClass('grid-select-' + this.type);
   };
 
@@ -9285,7 +11738,7 @@ BaseSelector = (function(_super) {
 module.exports = BaseSelector;
 
 
-},{}],87:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 var CheckSelector, RowSelector,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9336,8 +11789,8 @@ CheckSelector = (function(_super) {
     this.column.setCheckedHeader(selectedAll && selection.hasSelection());
   };
 
-  CheckSelector.prototype.gridRendered = function(grid) {
-    CheckSelector.__super__.gridRendered.call(this, grid);
+  CheckSelector.prototype.gridRender = function(grid) {
+    CheckSelector.__super__.gridRender.call(this, grid);
     this.setCheckColumn(grid.checker);
   };
 
@@ -9363,7 +11816,7 @@ CheckSelector = (function(_super) {
 
   CheckSelector.prototype.doDestroy = function() {
     this.column = null;
-    CheckSelector.__super__.doDestroy.call(this);
+    return CheckSelector.__super__.doDestroy.apply(this, arguments);
   };
 
   return CheckSelector;
@@ -9373,7 +11826,7 @@ CheckSelector = (function(_super) {
 module.exports = CheckSelector;
 
 
-},{"./RowSelector":88}],88:[function(require,module,exports){
+},{"./RowSelector":109}],109:[function(require,module,exports){
 var BaseSelector, RowSelector,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9391,8 +11844,8 @@ RowSelector = (function(_super) {
 
   RowSelector.prototype.selectOnRowClick = true;
 
-  RowSelector.prototype.gridRendered = function(grid) {
-    RowSelector.__super__.gridRendered.call(this, grid);
+  RowSelector.prototype.gridRender = function(grid) {
+    RowSelector.__super__.gridRender.call(this, grid);
     if (this.selectOnRowClick) {
       this.mon(grid.bodyEl, "click:relay(tr)", (function(_this) {
         return function(event, target) {
@@ -9447,7 +11900,7 @@ RowSelector = (function(_super) {
 module.exports = RowSelector;
 
 
-},{"./BaseSelector":86}],89:[function(require,module,exports){
+},{"./BaseSelector":107}],110:[function(require,module,exports){
 var SelectionModel,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9759,7 +12212,7 @@ SelectionModel = (function(_super) {
 module.exports = SelectionModel;
 
 
-},{}],90:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 var SelectorFactory;
 
 SelectorFactory = (function() {
@@ -9787,7 +12240,7 @@ SelectorFactory = (function() {
 module.exports = SelectorFactory;
 
 
-},{}],91:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 module.exports = {
   SelectorFactory: require('./SelectorFactory'),
   BaseSelector: require('./BaseSelector'),
@@ -9797,56 +12250,59 @@ module.exports = {
 };
 
 
-},{"./BaseSelector":86,"./CheckSelector":87,"./RowSelector":88,"./SelectionModel":89,"./SelectorFactory":90}],92:[function(require,module,exports){
-var Panel,
+},{"./BaseSelector":107,"./CheckSelector":108,"./RowSelector":109,"./SelectionModel":110,"./SelectorFactory":111}],113:[function(require,module,exports){
+var Pane, TabPanel,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Panel = (function(_super) {
-  __extends(Panel, _super);
+Pane = require('../panel/Pane');
 
-  function Panel() {
-    return Panel.__super__.constructor.apply(this, arguments);
+TabPanel = (function(_super) {
+  __extends(TabPanel, _super);
+
+  function TabPanel() {
+    return TabPanel.__super__.constructor.apply(this, arguments);
   }
 
-  Panel.prototype.tab = null;
+  TabPanel.prototype.tab = null;
 
-  Panel.prototype.baseCls = 'tab-pane';
+  TabPanel.prototype.baseCls = 'tab-pane';
 
-  Panel.prototype.visible = false;
+  TabPanel.prototype.visible = false;
 
-  Panel.prototype.role = 'tabpanel';
+  TabPanel.prototype.role = 'tabpanel';
 
-  Panel.prototype.setTitle = function(title) {
+  TabPanel.prototype.setTitle = function(title) {
     this.title = title;
     if (this.tab) {
       this.tab.set('html', title);
     }
   };
 
-  Panel.prototype.markActive = function(active) {
+  TabPanel.prototype.markActive = function(active) {
     this.setVisible(active);
     this.el.toggleClass('active', active);
     this.tab.toggleClass('active', active);
+    this.emit('active', this, active);
   };
 
-  Panel.prototype.setActive = function() {
+  TabPanel.prototype.setActive = function() {
     this.getParent().setActive(this.name);
   };
 
-  return Panel;
+  return TabPanel;
 
-})(Miwo.Container);
+})(Pane);
 
-module.exports = Panel;
+module.exports = TabPanel;
 
 
-},{}],93:[function(require,module,exports){
-var Panel, Tabs,
+},{"../panel/Pane":91}],114:[function(require,module,exports){
+var TabPanel, Tabs,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-Panel = require('./Panel');
+TabPanel = require('./TabPanel');
 
 Tabs = (function(_super) {
   __extends(Tabs, _super);
@@ -9862,6 +12318,8 @@ Tabs = (function(_super) {
   Tabs.prototype.active = null;
 
   Tabs.prototype.tabsEl = null;
+
+  Tabs.prototype.scrollable = false;
 
   Tabs.prototype.doInit = function() {
     Tabs.__super__.doInit.apply(this, arguments);
@@ -9896,7 +12354,13 @@ Tabs = (function(_super) {
   };
 
   Tabs.prototype.addPanel = function(name, config) {
-    return this.add(name, new Panel(config));
+    return this.add(name, new TabPanel(config));
+  };
+
+  Tabs.prototype.addedComponent = function(component) {
+    if (!component.scrollable && this.scrollable) {
+      component.setScrollable(true);
+    }
   };
 
   Tabs.prototype.doRender = function() {
@@ -9947,14 +12411,15 @@ Tabs = (function(_super) {
 module.exports = Tabs;
 
 
-},{"./Panel":92}],94:[function(require,module,exports){
+},{"./TabPanel":113}],115:[function(require,module,exports){
 module.exports = {
   Tabs: require('./Tabs'),
-  Panel: require('./Panel')
+  Panel: require('./TabPanel'),
+  TabPanel: require('./TabPanel')
 };
 
 
-},{"./Panel":92,"./Tabs":93}],95:[function(require,module,exports){
+},{"./TabPanel":113,"./Tabs":114}],116:[function(require,module,exports){
 var BaseTip,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10086,7 +12551,7 @@ BaseTip = (function(_super) {
 module.exports = BaseTip;
 
 
-},{}],96:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 var BaseTipManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10177,7 +12642,7 @@ BaseTipManager = (function(_super) {
 module.exports = BaseTipManager;
 
 
-},{}],97:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 var BaseTip, Popover, ScreenMask,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10211,11 +12676,7 @@ Popover = (function(_super) {
     Popover.__super__.afterInit.call(this);
     this.screenMask = new ScreenMask((function(_this) {
       return function() {
-        if (_this.closeMode === 'hide') {
-          _this.hide();
-        } else {
-          _this.close();
-        }
+        _this.sleep();
       };
     })(this));
   };
@@ -10228,12 +12689,22 @@ Popover = (function(_super) {
 
   Popover.prototype.show = function() {
     this.screenMask.show();
+    miwo.body.on('keydown', this.bound('onKeyDown'));
     Popover.__super__.show.call(this);
   };
 
   Popover.prototype.hide = function() {
+    miwo.body.un('keydown', this.bound('onKeyDown'));
     this.screenMask.hide();
     Popover.__super__.hide.call(this);
+  };
+
+  Popover.prototype.sleep = function() {
+    if (this.closeMode === 'hide') {
+      this.hide();
+    } else {
+      this.close();
+    }
   };
 
   Popover.prototype.afterRender = function() {
@@ -10243,6 +12714,12 @@ Popover = (function(_super) {
     }
     if (this.content) {
       this.setContent(this.content);
+    }
+  };
+
+  Popover.prototype.onKeyDown = function(e) {
+    if (e.key === 'esc') {
+      this.sleep();
     }
   };
 
@@ -10287,7 +12764,7 @@ Popover = (function(_super) {
 module.exports = Popover;
 
 
-},{"../utils/ScreenMask":106,"./BaseTip":95}],98:[function(require,module,exports){
+},{"../utils/ScreenMask":127,"./BaseTip":116}],119:[function(require,module,exports){
 var BaseTipManager, Popover, PopoverManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10340,7 +12817,7 @@ PopoverManager = (function(_super) {
 module.exports = PopoverManager;
 
 
-},{"./BaseTipManager":96,"./Popover":97}],99:[function(require,module,exports){
+},{"./BaseTipManager":117,"./Popover":118}],120:[function(require,module,exports){
 var BaseTip, Tooltip,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10389,7 +12866,7 @@ Tooltip = (function(_super) {
 module.exports = Tooltip;
 
 
-},{"./BaseTip":95}],100:[function(require,module,exports){
+},{"./BaseTip":116}],121:[function(require,module,exports){
 var BaseTipManager, Tooltip, TooltipManager,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10437,7 +12914,7 @@ TooltipManager = (function(_super) {
 module.exports = TooltipManager;
 
 
-},{"./BaseTipManager":96,"./Tooltip":99}],101:[function(require,module,exports){
+},{"./BaseTipManager":117,"./Tooltip":120}],122:[function(require,module,exports){
 module.exports = {
   BaseTip: require('./BaseTip'),
   Popover: require('./Popover'),
@@ -10445,7 +12922,7 @@ module.exports = {
 };
 
 
-},{"./BaseTip":95,"./Popover":97,"./Tooltip":99}],102:[function(require,module,exports){
+},{"./BaseTip":116,"./Popover":118,"./Tooltip":120}],123:[function(require,module,exports){
 module.exports = {
   nav: {
     prev: 'Previous',
@@ -10468,11 +12945,19 @@ module.exports = {
     selectColor: 'Select color',
     today: 'Today',
     clear: 'Clear'
+  },
+  inputs: {
+    dateTo: 'to',
+    switchOn: 'ON',
+    switchOff: 'OFF'
+  },
+  pagination: {
+    pageInfo: 'Visible: {visible} Total: {total}'
   }
 };
 
 
-},{}],103:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 var Color;
 
 Color = (function() {
@@ -10726,7 +13211,7 @@ Color.intToHex = function(dec) {
 module.exports = Color;
 
 
-},{}],104:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 var LoadMask,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10742,12 +13227,12 @@ LoadMask = (function(_super) {
 
   return LoadMask;
 
-})(Miwo.Object);
+})(Miwo.Component);
 
 module.exports = LoadMask;
 
 
-},{}],105:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 var Paginator,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10827,7 +13312,7 @@ Paginator = (function(_super) {
 module.exports = Paginator;
 
 
-},{}],106:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 var ScreenMask;
 
 ScreenMask = (function() {
@@ -10864,7 +13349,7 @@ ScreenMask = (function() {
 module.exports = ScreenMask;
 
 
-},{}],107:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 module.exports = {
   LoadMask: require('./LoadMask'),
   ScreenMask: require('./ScreenMask'),
@@ -10872,7 +13357,7 @@ module.exports = {
 };
 
 
-},{"./Color":103,"./LoadMask":104,"./ScreenMask":106}],108:[function(require,module,exports){
+},{"./Color":124,"./LoadMask":125,"./ScreenMask":127}],129:[function(require,module,exports){
 var Dialog, Window,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -10921,7 +13406,7 @@ Dialog = (function(_super) {
 module.exports = Dialog;
 
 
-},{"./Window":111}],109:[function(require,module,exports){
+},{"./Window":132}],130:[function(require,module,exports){
 var Button, Dialog, DialogFactory;
 
 Dialog = require('./Dialog');
@@ -10936,7 +13421,7 @@ DialogFactory = (function() {
     dialog = new Dialog();
     dialog.render(miwo.body);
     dialog.setTitle(title);
-    dialog.setContent("<p>" + message + "</p>");
+    dialog.setContent("<p class='text-center'>" + message + "</p>");
     dialog.setButtons(buttons);
     dialog.show();
     return dialog;
@@ -11004,7 +13489,7 @@ DialogFactory = (function() {
 module.exports = DialogFactory;
 
 
-},{"../buttons/Button":6,"./Dialog":108}],110:[function(require,module,exports){
+},{"../buttons/Button":6,"./Dialog":129}],131:[function(require,module,exports){
 var Form, FormWindow, Window,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -11049,6 +13534,11 @@ FormWindow = (function(_super) {
     return this.get('form');
   };
 
+  FormWindow.prototype.setFocus = function() {
+    FormWindow.__super__.setFocus.call(this);
+    this.getForm().getFocusControl().setFocus();
+  };
+
   FormWindow.prototype.addSubmitButton = function(text) {
     return this.addButton('submit', {
       text: text,
@@ -11061,11 +13551,6 @@ FormWindow = (function(_super) {
     });
   };
 
-  FormWindow.prototype.setFocus = function() {
-    FormWindow.__super__.setFocus.call(this);
-    this.getForm().getFocusControl().setFocus();
-  };
-
   return FormWindow;
 
 })(Window);
@@ -11073,7 +13558,7 @@ FormWindow = (function(_super) {
 module.exports = FormWindow;
 
 
-},{"../form/container/Form":19,"./Window":111}],111:[function(require,module,exports){
+},{"../form/container/Form":23,"./Window":132}],132:[function(require,module,exports){
 var Button, ToolButton, Window,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -11126,9 +13611,8 @@ Window = (function(_super) {
   Window.prototype.tools = null;
 
   Window.prototype.beforeInit = function() {
-    Window.__super__.beforeInit.call(this);
+    Window.__super__.beforeInit.apply(this, arguments);
     this.zIndexManage = true;
-    this.contentEl = 'div';
     this.baseCls = 'window';
     this.visible = false;
     this.width = 600;
@@ -11139,8 +13623,10 @@ Window = (function(_super) {
   };
 
   Window.prototype.afterInit = function() {
-    Window.__super__.afterInit.call(this);
+    Window.__super__.afterInit.apply(this, arguments);
     miwo.windowMgr.register(this);
+    this.contentHeight = this.height;
+    this.height = null;
   };
 
   Window.prototype.open = function() {
@@ -11175,12 +13661,12 @@ Window = (function(_super) {
   };
 
   Window.prototype.doShow = function() {
-    Window.__super__.doShow.call(this);
+    Window.__super__.doShow.apply(this, arguments);
     this.toFront();
   };
 
   Window.prototype.doHide = function() {
-    Window.__super__.doHide.call(this);
+    Window.__super__.doHide.apply(this, arguments);
     this.toBack();
   };
 
@@ -11189,14 +13675,14 @@ Window = (function(_super) {
   };
 
   Window.prototype.beforeRender = function() {
-    Window.__super__.beforeRender.call(this);
+    Window.__super__.beforeRender.apply(this, arguments);
     this.el.addClass('modal-dialog');
     this.el.set('html', "<div class=\"window-content modal-content\">\n	<div miwo-reference=\"headerEl\" class=\"window-header modal-header\">\n		<div miwo-reference=\"toolsEl\" class='window-tools'></div>\n		<h4 miwo-reference=\"titleEl\" class='window-title modal-title'>" + this.title + "</h4>\n	</div>\n	<div miwo-reference=\"contentEl\" class=\"window-body modal-body\"></div>\n	<div miwo-reference=\"footerEl\" class=\"window-footer modal-footer\"></div>\n</div>");
   };
 
   Window.prototype.afterRender = function() {
     var button, name, _ref;
-    Window.__super__.afterRender.call(this);
+    Window.__super__.afterRender.apply(this, arguments);
     this.keyListener = new Miwo.utils.KeyListener(this.el);
     this.keyListener.on('esc', (function(_this) {
       return function() {
@@ -11231,6 +13717,9 @@ Window = (function(_super) {
     }
     if (!this.modal) {
       miwo.body.on('click', this.bound('onBodyClick'));
+    }
+    if (this.contentHeight) {
+      this.contentEl.setStyle('height', this.contentHeight);
     }
     _ref = this.buttons.items;
     for (name in _ref) {
@@ -11334,7 +13823,7 @@ Window = (function(_super) {
 module.exports = Window;
 
 
-},{"../buttons/Button":6,"../buttons/ToolButton":9}],112:[function(require,module,exports){
+},{"../buttons/Button":6,"../buttons/ToolButton":9}],133:[function(require,module,exports){
 var WindowManager;
 
 WindowManager = (function() {
@@ -11375,7 +13864,7 @@ WindowManager = (function() {
 module.exports = WindowManager;
 
 
-},{}],113:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 module.exports = {
   Window: require('./Window'),
   FormWindow: require('./FormWindow'),
@@ -11383,4 +13872,4 @@ module.exports = {
 };
 
 
-},{"./Dialog":108,"./FormWindow":110,"./Window":111}]},{},[55])
+},{"./Dialog":129,"./FormWindow":131,"./Window":132}]},{},[64])

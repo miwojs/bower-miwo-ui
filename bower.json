@@ -11,21 +11,8 @@
 		"css/miwo-ui.min.css",
 		"js/miwo-ui.js",
 		"js/miwo-ui.min.js",
-		"img/colorpicker/bar.png",
-		"img/colorpicker/map.png",
-		"less/bootstrap.less",
-		"less/controls.less",
-		"less/forms.less",
-		"less/grids.less",
-		"less/index.less",
-		"less/mixins.less",
-		"less/picker.less",
-		"less/reset.less",
-		"less/tabs.less",
-		"less/tooltips.less",
-		"less/utils.less",
-		"less/variables.less",
-		"less/window.less"
+		"img/**/*.png",
+		"less/*.less"
 	],
 	"ignore": [
 	],

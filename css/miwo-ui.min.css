@@ -1,11 +1,14 @@
 template{display:none}
+.label-muted{background:#eee;color:#585858;border:1px solid #ccc}
+.label-radius{border-radius:15px}
 .btn-tool{-webkit-appearance:none;padding:0;cursor:pointer;background:0 0;border:0}
 .colorfield .form-control{width:60px;padding:2px 5px;float:left}
 .colorfield .btn{margin-left:5px;float:left}
-.checkbox .checker,.radio .checker{width:24px;height:28px;float:left;font-size:22px;position:relative;color:#ccc;-webkit-transition:all .2s;-moz-transition:all .2s;-ms-transition:all .2s;-o-transition:all .2s}
+.checkbox .checker,.radio .checker{width:24px;height:28px;float:left;font-size:22px;position:relative;color:#ccc;outline:0;-webkit-transition:all .2s;-moz-transition:all .2s;-ms-transition:all .2s;-o-transition:all .2s}
+.checkbox .checker:focus,.radio .checker:focus{color:#428bca}
 .checkbox .label-text,.radio .label-text{float:left;line-height:2}
 .checkbox input,.radio input{position:absolute;opacity:0}
-.checkbox.checked .checker,.checkbox.focus .checker,.radio.checked .checker,.radio.focus .checker{color:#428bca}
+.checkbox.checked .checker,.radio.checked .checker{color:#428bca}
 .checkbox.disabled,.radio.disabled{color:#ccc;cursor:not-allowed}
 .checkbox.disabled .checker,.radio.disabled .checker{color:#ccc}
 .checkboxlist .checkbox-inline,.radiolist .radio-inline{padding-right:20px;margin-left:0;margin-right:10px}
@@ -25,29 +28,67 @@ template{display:none}
 .combo-dropdown-items{position:relative;overflow-x:hidden;overflow-y:auto;max-height:200px}
 .combo-dropdown-item{margin:0;padding:3px 7px 3px 12px;cursor:pointer;min-height:1em}
 .combo-dropdown-item.active{color:#fff;background-color:#428bca}
+.combo-dropdown-item.disabled{color:#eee;cursor:not-allowed}
 .combo-dropdown.active{border-color:#66afe9}
 .combo-empty .combo-input-text{color:#999}
 .combo-open{border-radius:4px 4px 0 0;border-bottom-color:#ddd!important}
-.combo.active{border-color:#66afe9;outline:0;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6);-moz-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6)}
+.combo:focus{border-color:#66afe9;outline:0;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6);-moz-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(82,168,236,.6)}
 .combo.disabled,.combo.disabled .combo-value{cursor:not-allowed;background-color:#eee}
 .combo.disabled .combo-value i{color:#777}
 .slider{position:relative;padding-top:10px;padding-left:5px;padding-right:5px;cursor:pointer}
 .slider .slider-track{height:12px;border:1px solid #ccc;border-radius:4px;background:#fff}
 .slider .slider-selection{width:0;height:10px;border-radius:4px;background:#eee}
 .slider .slider-knob{position:absolute;left:0;top:6px;width:20px;height:20px;border-radius:10px;background:#fff;border:1px solid #ccc}
-.slider .slider-knob.active,.slider .slider-knob:hover{background:#428bca;border-color:#357ebd}
+.slider .slider-knob.active,.slider .slider-knob:focus,.slider .slider-knob:hover{outline:0;background:#428bca;border-color:#357ebd}
 .slider.disabled{opacity:.8;cursor:text}
 .slider.disabled .slider-knob.active,.slider.disabled .slider-knob:hover{background:#fff;border:1px solid #ccc}
+.daterange{width:100%;display:table}
+.daterange .input-group-addon{width:20px}
+.daterange-start{border-top-right-radius:0;border-bottom-right-radius:0}
+.daterange-end{border-top-left-radius:0;border-bottom-left-radius:0}
+.daterange.has-append .daterange-end{border-top-right-radius:0;border-bottom-right-radius:0}
+.daterange.has-prepend .daterange-start{border-top-left-radius:0;border-bottom-left-radius:0}
+.toggle{cursor:pointer;position:relative;display:inline-block;width:auto}
+.toggle.disabled,.toggle.readonly{opacity:.5;filter:alpha(opacity=50);cursor:not-allowed;background:#eee}
+.toggle-text{padding-left:10px;padding-right:10px;text-align:center;white-space:nowrap}
+.toggle-handle{top:-1px;position:absolute;border-radius:40px;background:#fff;border:1px solid #ccc}
+.toggle-on .toggle-text{padding-right:40px}
+.toggle-on .toggle-handle{right:-1px}
+.toggle-off .toggle-text{padding-left:40px}
+.toggle-off .toggle-handle{left:-1px}
+.toggle-success{border-color:#4cae4c;background:#5cb85c;color:#fff}
+.toggle-default{border-color:#ccc;background:#fff;color:#333}
+.toggle-info{border-color:#46b8da;background:#5bc0de;color:#fff}
+.toggle-warning{border-color:#eea236;background:#f0ad4e;color:#fff}
+.toggle-danger{border-color:#d43f3a;background:#d9534f;color:#fff}
+.toggle-primary{border-color:#357ebd;background:#428bca;color:#fff}
+.toggle.input-lg{border-radius:46px}
+.toggle.input-lg .toggle-handle{width:46px;height:46px}
+.toggle.input-md{border-radius:34px}
+.toggle.input-md .toggle-handle{width:34px;height:34px}
+.toggle.input-sm{border-radius:30px}
+.toggle.input-sm .toggle-handle{width:30px;height:30px}
+.dropselect-list{position:relative}
+.dropselect-list .items{width:100%;height:300px;overflow-x:hidden;overflow-y:auto;border:1px solid #ccc;border-radius:4px}
+.dropselect-list .item{cursor:pointer;padding:5px 8px;border-bottom:1px solid #e6e6e6}
+.dropselect-list .item.selected,.dropselect-list .item:hover{background-color:#f5f5f5}
+.dropselect-list .empty{position:absolute;display:table;top:30px;left:0;width:100%;height:280px;padding:10px}
+.dropselect-list .empty span{display:table-cell;text-align:center;vertical-align:middle;font-size:19px;color:#ccc}
+.dropselect-buttons{padding-top:100px}
+.dropselect-buttons .btn{margin:10px 0}
 .form-control.has-error{border-color:#ebccd1!important;box-shadow:inset 0 1px 1px rgba(0,0,0,.075);color:#a94442}
+.form-group{outline:0}
 .form-group .help-block.has-error{color:#a94442}
 .form-group.input-fill input{width:100%}
-.form-horizontal .checkbox,.form-horizontal .radio{margin-bottom:15px;padding-top:0}
+.form-composite>.row{margin-left:0;margin-right:0}
+.form-horizontal .checkbox,.form-horizontal .radio{padding-top:0}
 .form-horizontal .checkbox label,.form-horizontal .radio label{padding-left:0}
-.form-horizontal .checkbox .checker,.form-horizontal .radio .checker{margin-left:-4px}
 .form-horizontal .control-label-required{position:absolute;right:0;color:#a94442}
 .form-horizontal .checkbox-inline,.form-horizontal .radio-inline{margin-left:-15px}
+.form-horizontal .form-actions button{margin-right:12px}
 .form-inline .form-group{padding-right:5px;margin-bottom:5px}
 .form-inline .form-group .control-label{display:none}
+.form-inline .form-group:last-child{padding-right:0}
 .input-group-addon-tooltip{background:0 0;border:none;color:#999}
 .input-tooltip :nth-last-child(2){-webkit-border-top-right-radius:4px!important;-webkit-border-bottom-right-radius:4px!important;-moz-border-radius-topright:4px!important;-moz-border-radius-bottomright:4px!important;border-top-right-radius:4px!important;border-bottom-right-radius:4px!important;-moz-background-clip:padding;-webkit-background-clip:padding-box;background-clip:padding-box}
 .input-group-addon:first-child+.input-group-addon:last-child{border-left:1px solid #ccc}
@@ -60,6 +101,9 @@ template{display:none}
 .tabs-horizontal .nav-tabs>li>a{border:1px solid transparent;border-radius:4px 0 0 4px;margin-right:0}
 .tabs-horizontal .nav-tabs>li.active a,.tabs-horizontal .nav-tabs>li.active a:hover{background:#fff;border:1px solid #ddd;border-right-color:#fff;margin-right:-1px;position:relative;z-index:1}
 .tabs-horizontal .tab-content{border-left:1px solid #ddd;margin-left:-31px;min-height:20em;position:relative;z-index:0}}
+.tabs-fit{height:100%;position:relative}
+.tabs-fit .tab-content{position:absolute;bottom:0;top:42px;left:0;right:0}
+.tabs-fit .tab-pane{position:absolute;top:0;left:0;right:0;bottom:0}
 .grid{width:100%;max-width:100%}
 .grid .grid-headers th,.grid .grid-rows td{padding:8px;line-height:1.42857143}
 .grid .grid-body{margin-bottom:5px}
@@ -70,11 +114,14 @@ template{display:none}
 .grid .grid-rows tr.grid-row-group td{border-top:none;text-transform:uppercase;padding-top:15px;font-weight:700}
 .grid .grid-rows tr td.grid-col-actions{padding-top:2px;padding-bottom:2px}
 .grid .grid-rows tr td.grid-col-actions .btn{margin-left:5px}
-.grid .grid-headers tr th{border-bottom:1px solid #ddd}
+.grid .grid-headers tr th{border-bottom:1px solid #ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .grid .checkbox{margin-top:-6px;margin-bottom:0}
 .grid .checkbox .checker{height:20px}
 .grid .checkbox label{padding-left:0}
-.grid-select-row .grid-rows tr.grid-row-data{cursor:pointer}
+.grid .label{padding:.3em .6em}
+.grid.scrollable .miwo-ct{overflow:hidden!important}
+.grid.scrollable .grid-main{position:absolute;top:38px;bottom:0;left:0;right:0}
+.grid-rowclickable .grid-rows tr.grid-row-data{cursor:pointer}
 .grid-align-top .grid-headers tr th,.grid-align-top .grid-rows tr td{vertical-align:top}
 .grid-align-middle .grid-headers tr th,.grid-align-middle .grid-rows tr td{vertical-align:middle}
 .grid-condensed .grid-headers tr th,.grid-condensed .grid-rows tr td{padding:5px}
@@ -82,10 +129,15 @@ template{display:none}
 .grid-popover-submit .btn{margin-bottom:5px}
 .grid-footer{padding-left:8px;padding-right:8px}
 .grid-operations{float:left}
-.grid-operations select{width:140px;float:left;margin-right:10px}
+.grid-operations select{width:160px;float:left;margin-right:10px}
 .grid-paginator{float:right}
 .grid-paginator .pagination{margin:0}
-.window{position:absolute;margin-top:0}
+.scrollable-ct{position:relative;overflow:hidden}
+.scrollable-body{position:relative;height:100%;overflow:hidden!important}
+.scrollable-slider{position:absolute;top:0;right:0;bottom:0;width:10px;cursor:pointer}
+.scrollable-knob{position:relative;background:#333;margin:0 2px;width:7px;height:50px;opacity:.7;border-radius:3px;border:1px solid #303030}
+.scrollable-knob:hover{opacity:1}
+.window{position:absolute;margin-top:0;outline:0}
 .window-tools{float:right;opacity:.5}
 .window-tools i{float:left;cursor:pointer;margin-left:10px}
 .colorpicker{position:relative;height:260px}
@@ -98,6 +150,23 @@ template{display:none}
 .colorpicker-preview{width:70px;height:70px;padding:0;margin:0;border:1px solid #aaa;box-shadow:0 0 5px #ddd}
 .colorpicker-utils input{margin-top:20px;width:75px;text-transform:lowercase}
 .colorpicker-utils .btn{position:absolute;bottom:0;right:0;width:75px}
+.datepicker table{width:100%;border-spacing:0;border-collapse:collapse}
+.datepicker table td,.datepicker table th{text-align:center;padding:3px!important;cursor:pointer;border-radius:4px}
+.datepicker table thead tr:nth-child(2) th{background:0 0}
+.datepicker table thead th:hover{background:#eee}
+.datepicker table td.inactive{color:#ccc}
+.datepicker table td.range-item{background:#eee;border-radius:0}
+.datepicker table td.range-end,.datepicker table td.range-start{background:#777;border-radius:4px;color:#fff}
+.datepicker table td.focus{background:#d5d5d5}
+.datepicker table td.today{border:1px solid #428bca;border-radius:0}
+.datepicker table td.disabled{color:#ccc;background:0 0;cursor:text}
+.datepicker table td.selected{background:#428bca;color:#fff}
+.datepicker .switch{text-align:center}
+.datepicker .invisible{opacity:0}
+.datepicker-panel{outline:0}
+.datepicker-footer td:hover{background:#eee}
+.monthpicker table td,.yearpicker table td{height:50px;line-height:50px}
 .margin-no{margin:0!important}
 .screen-off{width:1px!important;height:1px!important;clip:rect(0 0 0 0)!important;border:0!important;margin:0!important;padding:0!important;overflow:hidden!important;position:absolute!important;outline:0!important;left:0!important;top:0!important}
 .screen-mask{position:fixed;top:0;right:0;left:0;bottom:0;min-height:100%;min-width:100%;height:auto;width:auto;opacity:0;z-index:1000}
+.text-muted-high{color:#aaa}

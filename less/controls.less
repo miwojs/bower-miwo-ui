@@ -18,20 +18,17 @@
 		font-size: 22px;
 		position: relative;
 		color: @input-border;
-		.transition(all 0.2s)
+		outline: none;
+		.transition(all 0.2s);
+		&:focus { color: @brand-primary; }
 	}
 	.label-text {
-		float: left;
 		line-height: 2;
+		display: inline;
 	}
 	input {
 		position: absolute;
 		opacity: 0;
-	}
-	&.focus {
-		.checker {
-			color: @brand-primary;
-		}
 	}
 	&.checked {
 		.checker {
@@ -81,6 +78,7 @@
 	&-input {
 		position: relative;
 		width: 100%;
+		padding-right: 20px;
 		&-text {
 			ul {
 				margin: 0px;
@@ -144,6 +142,10 @@
 				color: @highlight-color;
 				background-color: @highlight-bg;
 			}
+			&.disabled {
+				color: @gray-lighter;
+				cursor: @cursor-disabled;
+			}
 		}
 		&.active {
 			border-color: @input-border-focus;
@@ -158,7 +160,7 @@
 		border-radius: 4px 4px 0px 0px;
 		border-bottom-color: #ddd !important;
 	}
-	&.active {
+	&:focus {
 		border-color: @input-border-focus;
 		outline: none;
 		-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
@@ -203,7 +205,8 @@
 		border-radius: 10px;
 		background: @btn-default-bg;
 		border: 1px solid @btn-default-border;
-		&:hover, &.active {
+		&:hover, &.active, &:focus {
+			outline: none;
 			background: @btn-primary-bg;
 			border-color: @btn-primary-border;
 		}
@@ -216,6 +219,162 @@
 				background: @btn-default-bg;
 				border: 1px solid @btn-default-border;
 			}
+		}
+	}
+}
+
+.daterange {
+	width: 100%;
+	display: table;
+	.input-group-addon {
+		width: 20px;
+	}
+	&-start {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+	&-end {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	&.has-append {
+		.daterange-end {
+			border-top-right-radius: 0;
+			border-bottom-right-radius: 0;
+		}
+	}
+	&.has-prepend {
+		.daterange-start {
+			border-top-left-radius: 0;
+			border-bottom-left-radius: 0;
+		}
+	}
+}
+
+.toggle {
+	cursor: pointer;
+	position: relative;
+	display: inline-block;
+	width: auto;
+	&.disabled, &.readonly {
+		opacity: 0.5;
+		filter: alpha(opacity=50);
+		cursor: @cursor-disabled;
+		background: @input-bg-disabled;
+	}
+	&-text {
+		padding-left: @padding-small-horizontal;
+		padding-right: @padding-small-horizontal;
+		text-align: center;
+		white-space: nowrap;
+	}
+	&-handle {
+		top: -1px;
+		position: absolute;
+		border-radius: 40px;
+		background: white;
+		border: 1px solid @input-border;
+	}
+	&-on {
+		.toggle-text {
+			padding-right: 40px;
+		}
+		.toggle-handle {
+			right: -1px;
+		}
+	}
+	&-off {
+		.toggle-text {
+			padding-left: 40px;
+		}
+		.toggle-handle {
+			left: -1px;
+		}
+	}
+	&-success {
+		border-color: @btn-success-border;
+		background: @btn-success-bg;
+		color: @btn-success-color;
+	}
+	&-default {
+		border-color: @btn-default-border;
+		background: @btn-default-bg;
+		color: @btn-default-color;
+	}
+	&-info {
+		border-color: @btn-info-border;
+		background: @btn-info-bg;
+		color: @btn-info-color;
+	}
+	&-warning {
+		border-color: @btn-warning-border;
+		background: @btn-warning-bg;
+		color: @btn-warning-color;
+	}
+	&-danger {
+		border-color: @btn-danger-border;
+		background: @btn-danger-bg;
+		color: @btn-danger-color;
+	}
+	&-primary {
+		border-color: @btn-primary-border;
+		background: @btn-primary-bg;
+		color: @btn-primary-color;
+	}
+	&.input-lg {
+		border-radius: @input-height-large;
+		.toggle-handle { width: @input-height-large; height: @input-height-large; }
+	}
+	&.input-md {
+		border-radius: @input-height-base;
+		.toggle-handle { width: @input-height-base; height: @input-height-base; }
+	}
+	&.input-sm {
+		border-radius: @input-height-small;
+		.toggle-handle { width: @input-height-small; height: @input-height-small; }
+	}
+}
+
+.dropselect {
+	&-list {
+		position: relative;
+		.items {
+			width: 100%;
+			height: 300px;
+			overflow-x: hidden;
+			overflow-y: auto;
+			border: 1px solid @input-border;
+			border-radius: @input-border-radius;
+		}
+		.item {
+			cursor: pointer;
+			padding: 5px 8px;
+			border-bottom: 1px solid lighten(@input-border, 10%);
+			&:hover, &.selected {
+				background-color: #f5f5f5;
+			}
+		}
+		.empty {
+			position: absolute;
+			display: table;
+			top: 30px;
+			left: 0px;
+			width: 100%;
+			height: 280px;
+			padding: 10px;
+			span {
+				display: table-cell;
+				text-align: center;
+				vertical-align: middle;
+				font-size: 19px;
+				color: #ccc;
+			}
+		}
+	}
+	&-buttons {
+		padding-top: 100px;
+		.btn {
+			margin: 10px 0px;
 		}
 	}
 }
