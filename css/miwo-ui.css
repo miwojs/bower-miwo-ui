@@ -16,6 +16,13 @@ template {
   background: 0 0;
   border: 0;
 }
+.close {
+  outline: none;
+}
+.close-lg {
+  font-size: 40px;
+  margin-top: -5px;
+}
 .colorfield .form-control {
   width: 60px;
   padding: 2px 5px;
@@ -216,6 +223,8 @@ template {
   background: white;
 }
 .slider .slider-selection {
+  position: relative;
+  left: 0px;
   width: 0px;
   height: 10px;
   border-radius: 4px;
@@ -477,6 +486,25 @@ template {
 .input-group-addon:not(:first-child):not(:last-child) + .form-control {
   border-left: 0;
 }
+.form-control-search {
+  position: relative;
+}
+.form-control-search:before {
+  display: block;
+  width: 14px;
+  height: 14px;
+  content: "\e003";
+  font-family: 'Glyphicons Halflings';
+  background-position: -48px 0;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  opacity: .5;
+  z-index: 1000;
+}
+.form-control-search .form-control {
+  padding-left: 26px;
+}
 /* Tooltips */
 .tooltip {
   display: none;
@@ -520,17 +548,20 @@ template {
   }
 }
 .tabs-fit {
-  height: 100%;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
-.tabs-fit .tab-content {
+.tabs-fit > .tab-content {
   position: absolute;
   bottom: 0px;
   top: 42px;
   left: 0px;
   right: 0px;
 }
-.tabs-fit .tab-pane {
+.tabs-fit > .tab-content > .pane {
   position: absolute;
   top: 0px;
   left: 0px;
@@ -662,6 +693,9 @@ template {
 }
 .grid-lg .grid-rows tr td {
   height: 46px;
+}
+.pane {
+  background: white;
 }
 .scrollable-ct {
   position: relative;

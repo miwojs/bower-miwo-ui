@@ -2,11 +2,13 @@ template{display:none}
 .label-muted{background:#eee;color:#585858;border:1px solid #ccc}
 .label-radius{border-radius:15px}
 .btn-tool{-webkit-appearance:none;padding:0;cursor:pointer;background:0 0;border:0}
+.close{outline:0}
+.close-lg{font-size:40px;margin-top:-5px}
 .colorfield .form-control{width:60px;padding:2px 5px;float:left}
 .colorfield .btn{margin-left:5px;float:left}
 .checkbox .checker,.radio .checker{width:24px;height:28px;float:left;font-size:22px;position:relative;color:#ccc;outline:0;-webkit-transition:all .2s;-moz-transition:all .2s;-ms-transition:all .2s;-o-transition:all .2s}
 .checkbox .checker:focus,.radio .checker:focus{color:#428bca}
-.checkbox .label-text,.radio .label-text{float:left;line-height:2}
+.checkbox .label-text,.radio .label-text{line-height:2;display:inline}
 .checkbox input,.radio input{position:absolute;opacity:0}
 .checkbox.checked .checker,.radio.checked .checker{color:#428bca}
 .checkbox.disabled,.radio.disabled{color:#ccc;cursor:not-allowed}
@@ -17,7 +19,7 @@ template{display:none}
 .combo-value i{color:#777}
 .combo-value.active{background:#eee}
 .combo-value.active i{color:#333}
-.combo-input{position:relative;width:100%}
+.combo-input{position:relative;width:100%;padding-right:20px}
 .combo-input-text ul{margin:0;padding:0}
 .combo-input-text li{line-height:13px;font-size:12px;list-style:none;padding:3px 20px 3px 5px;margin:-1px 3px 3px 0;position:relative;display:inline-block}
 .combo-input-text li i{position:absolute;right:4px;top:4px}
@@ -37,7 +39,7 @@ template{display:none}
 .combo.disabled .combo-value i{color:#777}
 .slider{position:relative;padding-top:10px;padding-left:5px;padding-right:5px;cursor:pointer}
 .slider .slider-track{height:12px;border:1px solid #ccc;border-radius:4px;background:#fff}
-.slider .slider-selection{width:0;height:10px;border-radius:4px;background:#eee}
+.slider .slider-selection{position:relative;left:0;width:0;height:10px;border-radius:4px;background:#eee}
 .slider .slider-knob{position:absolute;left:0;top:6px;width:20px;height:20px;border-radius:10px;background:#fff;border:1px solid #ccc}
 .slider .slider-knob.active,.slider .slider-knob:focus,.slider .slider-knob:hover{outline:0;background:#428bca;border-color:#357ebd}
 .slider.disabled{opacity:.8;cursor:text}
@@ -80,7 +82,7 @@ template{display:none}
 .form-group{outline:0}
 .form-group .help-block.has-error{color:#a94442}
 .form-group.input-fill input{width:100%}
-.form-composite>.row{margin-left:0;margin-right:0}
+.form-composite>.row{margin-right:0}
 .form-horizontal .checkbox,.form-horizontal .radio{padding-top:0}
 .form-horizontal .checkbox label,.form-horizontal .radio label{padding-left:0}
 .form-horizontal .control-label-required{position:absolute;right:0;color:#a94442}
@@ -93,6 +95,9 @@ template{display:none}
 .input-tooltip :nth-last-child(2){-webkit-border-top-right-radius:4px!important;-webkit-border-bottom-right-radius:4px!important;-moz-border-radius-topright:4px!important;-moz-border-radius-bottomright:4px!important;border-top-right-radius:4px!important;border-bottom-right-radius:4px!important;-moz-background-clip:padding;-webkit-background-clip:padding-box;background-clip:padding-box}
 .input-group-addon:first-child+.input-group-addon:last-child{border-left:1px solid #ccc}
 .form-control+.input-group-addon:not(:first-child):not(:last-child),.input-group-addon:not(:first-child):not(:last-child)+.form-control,.input-group-addon:not(:first-child):not(:last-child)+.input-group-addon:not(:first-child):not(:last-child){border-left:0}
+.form-control-search{position:relative}
+.form-control-search:before{display:block;width:14px;height:14px;content:"\e003";font-family:'Glyphicons Halflings';background-position:-48px 0;position:absolute;top:8px;left:8px;opacity:.5;z-index:1000}
+.form-control-search .form-control{padding-left:26px}
 .tooltip{display:none;z-index:100000;margin:0!important}
 .tooltip-inner{max-width:250px}
 .popover .btn{margin-left:5px}
@@ -101,9 +106,12 @@ template{display:none}
 .tabs-horizontal .nav-tabs>li>a{border:1px solid transparent;border-radius:4px 0 0 4px;margin-right:0}
 .tabs-horizontal .nav-tabs>li.active a,.tabs-horizontal .nav-tabs>li.active a:hover{background:#fff;border:1px solid #ddd;border-right-color:#fff;margin-right:-1px;position:relative;z-index:1}
 .tabs-horizontal .tab-content{border-left:1px solid #ddd;margin-left:-31px;min-height:20em;position:relative;z-index:0}}
-.tabs-fit{height:100%;position:relative}
-.tabs-fit .tab-content{position:absolute;bottom:0;top:42px;left:0;right:0}
-.tabs-fit .tab-pane{position:absolute;top:0;left:0;right:0;bottom:0}
+.tabs-fit{position:absolute;top:0;left:0;right:0;bottom:0}
+.tabs-fit>.tab-content{position:absolute;bottom:0;top:42px;left:0;right:0}
+.tabs-fit>.tab-content>.pane{position:absolute;top:0;left:0;right:0;bottom:0}
+.tabs-layout{position:absolute;left:0;right:0;top:0;bottom:0}
+.tabs-layout .nav-tabs{margin-right:24px;margin-left:24px}
+.tabs-layout .tab-pane>.pane-ct{padding-right:24px;padding-left:24px}
 .grid{width:100%;max-width:100%}
 .grid .grid-headers th,.grid .grid-rows td{padding:8px;line-height:1.42857143}
 .grid .grid-body{margin-bottom:5px}
@@ -124,7 +132,7 @@ template{display:none}
 .grid-rowclickable .grid-rows tr.grid-row-data{cursor:pointer}
 .grid-align-top .grid-headers tr th,.grid-align-top .grid-rows tr td{vertical-align:top}
 .grid-align-middle .grid-headers tr th,.grid-align-middle .grid-rows tr td{vertical-align:middle}
-.grid-condensed .grid-headers tr th,.grid-condensed .grid-rows tr td{padding:5px}
+.grid-condensed .grid-rows tr td{padding:5px}
 .grid-nowrap .grid-rows tr td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .grid-popover-submit .btn{margin-bottom:5px}
 .grid-footer{padding-left:8px;padding-right:8px}
@@ -132,6 +140,8 @@ template{display:none}
 .grid-operations select{width:160px;float:left;margin-right:10px}
 .grid-paginator{float:right}
 .grid-paginator .pagination{margin:0}
+.grid-lg .grid-rows tr td{height:46px}
+.pane{background:#fff}
 .scrollable-ct{position:relative;overflow:hidden}
 .scrollable-body{position:relative;height:100%;overflow:hidden!important}
 .scrollable-slider{position:absolute;top:0;right:0;bottom:0;width:10px;cursor:pointer}
@@ -140,6 +150,7 @@ template{display:none}
 .window{position:absolute;margin-top:0;outline:0}
 .window-tools{float:right;opacity:.5}
 .window-tools i{float:left;cursor:pointer;margin-left:10px}
+.pager-info{margin:0;line-height:32px}
 .colorpicker{position:relative;height:260px}
 .colorpicker-bar,.colorpicker-map,.colorpicker-utils{float:left;position:relative;text-align:center;height:256px}
 .colorpicker-map{width:256px}
