@@ -4,12 +4,15 @@ template{display:none}
 .btn-tool{-webkit-appearance:none;padding:0;cursor:pointer;background:0 0;border:0}
 .close{outline:0}
 .close-lg{font-size:40px;margin-top:-5px}
-.colorfield .form-control{width:60px;padding:2px 5px;float:left}
+.colorfield-color{width:40px;padding:2px 5px;float:left;border-radius:4px 0 0 4px}
+.colorfield-text{width:100px;float:left;border-radius:0 4px 4px 0;border-left:none;text-transform:uppercase}
 .colorfield .btn{margin-left:5px;float:left}
+.checkbox,.radio{padding-top:0}
 .checkbox .checker,.radio .checker{width:24px;height:28px;float:left;font-size:22px;position:relative;color:#ccc;outline:0;-webkit-transition:all .2s;-moz-transition:all .2s;-ms-transition:all .2s;-o-transition:all .2s}
 .checkbox .checker:focus,.radio .checker:focus{color:#428bca}
-.checkbox .label-text,.radio .label-text{line-height:2;display:inline}
+.checkbox label,.radio label{padding-left:0}
 .checkbox input,.radio input{position:absolute;opacity:0}
+.checkbox .label-text,.radio .label-text{line-height:2;display:inline}
 .checkbox.checked .checker,.radio.checked .checker{color:#428bca}
 .checkbox.disabled,.radio.disabled{color:#ccc;cursor:not-allowed}
 .checkbox.disabled .checker,.radio.disabled .checker{color:#ccc}
@@ -42,8 +45,8 @@ template{display:none}
 .slider .slider-selection{position:relative;left:0;width:0;height:10px;border-radius:4px;background:#eee}
 .slider .slider-knob{position:absolute;left:0;top:6px;width:20px;height:20px;border-radius:10px;background:#fff;border:1px solid #ccc}
 .slider .slider-knob.active,.slider .slider-knob:focus,.slider .slider-knob:hover{outline:0;background:#428bca;border-color:#357ebd}
-.slider.disabled{opacity:.8;cursor:text}
-.slider.disabled .slider-knob.active,.slider.disabled .slider-knob:hover{background:#fff;border:1px solid #ccc}
+.slider.disabled{opacity:.8;cursor:not-allowed}
+.slider.disabled .slider-knob.active,.slider.disabled .slider-knob:focus,.slider.disabled .slider-knob:hover{background:#fff;border:1px solid #ccc}
 .daterange{width:100%;display:table}
 .daterange .input-group-addon{width:20px}
 .daterange-start{border-top-right-radius:0;border-bottom-right-radius:0}
@@ -51,7 +54,7 @@ template{display:none}
 .daterange.has-append .daterange-end{border-top-right-radius:0;border-bottom-right-radius:0}
 .daterange.has-prepend .daterange-start{border-top-left-radius:0;border-bottom-left-radius:0}
 .toggle{cursor:pointer;position:relative;display:inline-block;width:auto}
-.toggle.disabled,.toggle.readonly{opacity:.5;filter:alpha(opacity=50);cursor:not-allowed;background:#eee}
+.toggle.disabled,.toggle.readonly{opacity:.5;filter:alpha(opacity=50);cursor:not-allowed;background:#eee;border-color:#ccc;color:#555}
 .toggle-text{padding-left:10px;padding-right:10px;text-align:center;white-space:nowrap}
 .toggle-handle{top:-1px;position:absolute;border-radius:40px;background:#fff;border:1px solid #ccc}
 .toggle-on .toggle-text{padding-right:40px}
@@ -83,11 +86,10 @@ template{display:none}
 .form-group .help-block.has-error{color:#a94442}
 .form-group.input-fill input{width:100%}
 .form-composite>.row{margin-right:0}
-.form-horizontal .checkbox,.form-horizontal .radio{padding-top:0}
-.form-horizontal .checkbox label,.form-horizontal .radio label{padding-left:0}
 .form-horizontal .control-label-required{position:absolute;right:0;color:#a94442}
-.form-horizontal .checkbox-inline,.form-horizontal .radio-inline{margin-left:-15px}
+.form-horizontal .checkbox-inline,.form-horizontal .radio-inline{margin-left:-20px}
 .form-horizontal .form-actions button{margin-right:12px}
+.form-horizontal.form-label-left .control-label{text-align:left}
 .form-inline .form-group{padding-right:5px;margin-bottom:5px}
 .form-inline .form-group .control-label{display:none}
 .form-inline .form-group:last-child{padding-right:0}
@@ -181,3 +183,5 @@ template{display:none}
 .screen-off{width:1px!important;height:1px!important;clip:rect(0 0 0 0)!important;border:0!important;margin:0!important;padding:0!important;overflow:hidden!important;position:absolute!important;outline:0!important;left:0!important;top:0!important}
 .screen-mask{position:fixed;top:0;right:0;left:0;bottom:0;min-height:100%;min-width:100%;height:auto;width:auto;opacity:0;z-index:1000}
 .text-muted-high{color:#aaa}
+.loading-mask{position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(255,255,255,.8)}
+.loading-mask-ct{margin-top:20%;position:relative}

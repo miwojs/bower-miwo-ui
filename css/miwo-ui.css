@@ -23,14 +23,26 @@ template {
   font-size: 40px;
   margin-top: -5px;
 }
-.colorfield .form-control {
-  width: 60px;
+.colorfield-color {
+  width: 40px;
   padding: 2px 5px;
   float: left;
+  border-radius: 4px 0 0 4px;
+}
+.colorfield-text {
+  width: 100px;
+  float: left;
+  border-radius: 0 4px 4px 0;
+  border-left: none;
+  text-transform: uppercase;
 }
 .colorfield .btn {
   margin-left: 5px;
   float: left;
+}
+.checkbox,
+.radio {
+  padding-top: 0px;
 }
 .checkbox .checker,
 .radio .checker {
@@ -50,15 +62,19 @@ template {
 .radio .checker:focus {
   color: #428bca;
 }
-.checkbox .label-text,
-.radio .label-text {
-  line-height: 2;
-  display: inline;
+.checkbox label,
+.radio label {
+  padding-left: 0px;
 }
 .checkbox input,
 .radio input {
   position: absolute;
   opacity: 0;
+}
+.checkbox .label-text,
+.radio .label-text {
+  line-height: 2;
+  display: inline;
 }
 .checkbox.checked .checker,
 .radio.checked .checker {
@@ -249,10 +265,11 @@ template {
 }
 .slider.disabled {
   opacity: 0.8;
-  cursor: text;
+  cursor: not-allowed;
 }
 .slider.disabled .slider-knob:hover,
-.slider.disabled .slider-knob.active {
+.slider.disabled .slider-knob.active,
+.slider.disabled .slider-knob:focus {
   background: #ffffff;
   border: 1px solid #cccccc;
 }
@@ -291,6 +308,8 @@ template {
   filter: alpha(opacity=50);
   cursor: not-allowed;
   background: #eeeeee;
+  border-color: #cccccc;
+  color: #555555;
 }
 .toggle-text {
   padding-left: 10px;
@@ -427,14 +446,6 @@ template {
 .form-composite > .row {
   margin-right: 0px;
 }
-.form-horizontal .radio,
-.form-horizontal .checkbox {
-  padding-top: 0px;
-}
-.form-horizontal .radio label,
-.form-horizontal .checkbox label {
-  padding-left: 0px;
-}
 .form-horizontal .control-label-required {
   position: absolute;
   right: 0px;
@@ -442,10 +453,13 @@ template {
 }
 .form-horizontal .checkbox-inline,
 .form-horizontal .radio-inline {
-  margin-left: -15px;
+  margin-left: -20px;
 }
 .form-horizontal .form-actions button {
   margin-right: 12px;
+}
+.form-horizontal.form-label-left .control-label {
+  text-align: left;
 }
 .form-inline .form-group {
   padding-right: 5px;
@@ -911,4 +925,16 @@ template {
 }
 .text-muted-high {
   color: #aaa;
+}
+.loading-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+}
+.loading-mask-ct {
+  margin-top: 20%;
+  position: relative;
 }
