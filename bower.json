@@ -1,7 +1,7 @@
 {
 	"name": "miwo-ui",
 	"description": "UI components based on miwo framework",
-	"version": "0.0.5",
+	"version": "0.0.7",
 	"keywords": ["framework", "mvc", "coffeescript", "components"],
 	"authors": [
 		"Dusan Kmet <morlokdk@gmail.com>"
