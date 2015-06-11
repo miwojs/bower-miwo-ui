@@ -8,16 +8,16 @@ template{display:none}
 .colorfield-text{width:100px;float:left;border-radius:0 4px 4px 0;border-left:none;text-transform:uppercase}
 .colorfield .btn{margin-left:5px;float:left}
 .checkbox,.radio{padding-top:0}
-.checkbox .checker,.radio .checker{width:24px;height:28px;float:left;font-size:22px;position:relative;color:#ccc;outline:0;-webkit-transition:all .2s;-moz-transition:all .2s;-ms-transition:all .2s;-o-transition:all .2s}
-.checkbox .checker:focus,.radio .checker:focus{color:#428bca}
+.checkbox .checker,.radio .checker{width:24px;height:28px;float:left;font-size:22px;position:relative;color:#ccc;outline:0;transition:all .2s;-webkit-transition:all .2s;-moz-transition:all .2s;-ms-transition:all .2s;-o-transition:all .2s}
+.checkbox .checker:focus,.radio .checker:focus{color:#337ab7}
 .checkbox label,.radio label{padding-left:0}
 .checkbox input,.radio input{position:absolute;opacity:0}
 .checkbox .label-text,.radio .label-text{line-height:2;display:inline}
-.checkbox.checked .checker,.radio.checked .checker{color:#428bca}
+.checkbox.checked .checker,.radio.checked .checker{color:#337ab7}
 .checkbox.disabled,.radio.disabled{color:#ccc;cursor:not-allowed}
 .checkbox.disabled .checker,.radio.disabled .checker{color:#ccc}
 .checkboxlist .checkbox-inline,.radiolist .radio-inline{padding-right:20px;margin-left:0;margin-right:10px}
-.combo{-webkit-transition:border-color ease-in-out .15s;-moz-transition:border-color ease-in-out .15s;-ms-transition:border-color ease-in-out .15s;-o-transition:border-color ease-in-out .15s;cursor:pointer}
+.combo{transition:border-color ease-in-out .15s;-webkit-transition:border-color ease-in-out .15s;-moz-transition:border-color ease-in-out .15s;-ms-transition:border-color ease-in-out .15s;-o-transition:border-color ease-in-out .15s;cursor:pointer}
 .combo-value{border-radius:3px;border:1px solid #ccc;color:#555;background:#fff;cursor:pointer}
 .combo-value i{color:#777}
 .combo-value.active{background:#eee}
@@ -29,10 +29,10 @@ template{display:none}
 .combo-input-arrow,.combo-input-reset{position:absolute;height:100%;width:15px;top:0;color:#777}
 .combo-input-arrow{right:0}
 .combo-input-reset{right:20px;display:none}
-.combo-dropdown{-webkit-transition:border-color ease-in-out .15s;-moz-transition:border-color ease-in-out .15s;-ms-transition:border-color ease-in-out .15s;-o-transition:border-color ease-in-out .15s;z-index:100010;position:absolute;color:#555;background-color:#fff;background-image:none;border:1px solid #ccc;border-top:none;border-radius:0 0 4px 4px;padding-top:4px;padding-bottom:4px;bottom:auto}
+.combo-dropdown{transition:border-color ease-in-out .15s;-webkit-transition:border-color ease-in-out .15s;-moz-transition:border-color ease-in-out .15s;-ms-transition:border-color ease-in-out .15s;-o-transition:border-color ease-in-out .15s;z-index:100010;position:absolute;color:#555;background-color:#fff;background-image:none;border:1px solid #ccc;border-top:none;border-radius:0 0 4px 4px;padding-top:4px;padding-bottom:4px;bottom:auto}
 .combo-dropdown-items{position:relative;overflow-x:hidden;overflow-y:auto;max-height:200px}
 .combo-dropdown-item{margin:0;padding:3px 7px 3px 12px;cursor:pointer;min-height:1em}
-.combo-dropdown-item.active{color:#fff;background-color:#428bca}
+.combo-dropdown-item.active{color:#fff;background-color:#337ab7}
 .combo-dropdown-item.disabled{color:#eee;cursor:not-allowed}
 .combo-dropdown.active{border-color:#66afe9}
 .combo-empty .combo-input-text{color:#999}
@@ -44,7 +44,7 @@ template{display:none}
 .slider .slider-track{height:12px;border:1px solid #ccc;border-radius:4px;background:#fff}
 .slider .slider-selection{position:relative;left:0;width:0;height:10px;border-radius:4px;background:#eee}
 .slider .slider-knob{position:absolute;left:0;top:6px;width:20px;height:20px;border-radius:10px;background:#fff;border:1px solid #ccc}
-.slider .slider-knob.active,.slider .slider-knob:focus,.slider .slider-knob:hover{outline:0;background:#428bca;border-color:#357ebd}
+.slider .slider-knob.active,.slider .slider-knob:focus,.slider .slider-knob:hover{outline:0;background:#337ab7;border-color:#2e6da4}
 .slider.disabled{opacity:.8;cursor:not-allowed}
 .slider.disabled .slider-knob.active,.slider.disabled .slider-knob:focus,.slider.disabled .slider-knob:hover{background:#fff;border:1px solid #ccc}
 .daterange{width:100%;display:table}
@@ -66,7 +66,7 @@ template{display:none}
 .toggle-info{border-color:#46b8da;background:#5bc0de;color:#fff}
 .toggle-warning{border-color:#eea236;background:#f0ad4e;color:#fff}
 .toggle-danger{border-color:#d43f3a;background:#d9534f;color:#fff}
-.toggle-primary{border-color:#357ebd;background:#428bca;color:#fff}
+.toggle-primary{border-color:#2e6da4;background:#337ab7;color:#fff}
 .toggle.input-lg{border-radius:46px}
 .toggle.input-lg .toggle-handle{width:46px;height:46px}
 .toggle.input-md{border-radius:34px}
@@ -101,7 +101,35 @@ template{display:none}
 .form-control-search:before{display:block;width:14px;height:14px;content:"\e003";font-family:'Glyphicons Halflings';background-position:-48px 0;position:absolute;top:8px;left:8px;opacity:.5;z-index:1000}
 .form-control-search .form-control{padding-left:26px}
 .tooltip{display:none;z-index:100000;margin:0!important}
-.tooltip-inner{max-width:250px}
+.tooltip-inner{max-width:250px;border:1px solid transparent}
+.tooltip-info.top .tooltip-arrow{border-top-color:#bce8f1}
+.tooltip-info.bottom .tooltip-arrow{border-bottom-color:#bce8f1}
+.tooltip-info.right .tooltip-arrow{border-right-color:#bce8f1}
+.tooltip-info.left .tooltip-arrow{border-left-color:#bce8f1}
+.tooltip-info .tooltip-inner{background-color:#d9edf7;border-color:#bce8f1;color:#31708f}
+.tooltip-info .tooltip-inner hr{border-top-color:#a6e1ec}
+.tooltip-info .tooltip-inner .alert-link{color:#245269}
+.tooltip-danger.top .tooltip-arrow{border-top-color:#ebccd1}
+.tooltip-danger.bottom .tooltip-arrow{border-bottom-color:#ebccd1}
+.tooltip-danger.right .tooltip-arrow{border-right-color:#ebccd1}
+.tooltip-danger.left .tooltip-arrow{border-left-color:#ebccd1}
+.tooltip-danger .tooltip-inner{background-color:#f2dede;border-color:#ebccd1;color:#a94442}
+.tooltip-danger .tooltip-inner hr{border-top-color:#e4b9c0}
+.tooltip-danger .tooltip-inner .alert-link{color:#843534}
+.tooltip-warning.top .tooltip-arrow{border-top-color:#faebcc}
+.tooltip-warning.bottom .tooltip-arrow{border-bottom-color:#faebcc}
+.tooltip-warning.right .tooltip-arrow{border-right-color:#faebcc}
+.tooltip-warning.left .tooltip-arrow{border-left-color:#faebcc}
+.tooltip-warning .tooltip-inner{background-color:#fcf8e3;border-color:#faebcc;color:#8a6d3b}
+.tooltip-warning .tooltip-inner hr{border-top-color:#f7e1b5}
+.tooltip-warning .tooltip-inner .alert-link{color:#66512c}
+.tooltip-success.top .tooltip-arrow{border-top-color:#d6e9c6}
+.tooltip-success.bottom .tooltip-arrow{border-bottom-color:#d6e9c6}
+.tooltip-success.right .tooltip-arrow{border-right-color:#d6e9c6}
+.tooltip-success.left .tooltip-arrow{border-left-color:#d6e9c6}
+.tooltip-success .tooltip-inner{background-color:#dff0d8;border-color:#d6e9c6;color:#3c763d}
+.tooltip-success .tooltip-inner hr{border-top-color:#c9e2b3}
+.tooltip-success .tooltip-inner .alert-link{color:#2b542c}
 .popover .btn{margin-left:5px}
 @media (min-width:768px){.tabs-horizontal .nav-tabs{border-bottom:0}
 .tabs-horizontal .nav-tabs>li{width:100%}
@@ -120,7 +148,7 @@ template{display:none}
 .grid .grid-rows tr td{border-top:1px solid #ddd}
 .grid .grid-rows tr:first-child td{border-top:none}
 .grid .grid-rows tr.grid-row-data:hover td{background-color:#f5f5f5}
-.grid .grid-rows tr.grid-row-data.grid-selected td{background-color:#e1edf7}
+.grid .grid-rows tr.grid-row-data.grid-selected td{background-color:#c7ddef}
 .grid .grid-rows tr.grid-row-group td{border-top:none;text-transform:uppercase;padding-top:15px;font-weight:700}
 .grid .grid-rows tr td.grid-col-actions{padding-top:2px;padding-bottom:2px}
 .grid .grid-rows tr td.grid-col-actions .btn{margin-left:5px}
@@ -171,9 +199,9 @@ template{display:none}
 .datepicker table td.range-item{background:#eee;border-radius:0}
 .datepicker table td.range-end,.datepicker table td.range-start{background:#777;border-radius:4px;color:#fff}
 .datepicker table td.focus{background:#d5d5d5}
-.datepicker table td.today{border:1px solid #428bca;border-radius:0}
+.datepicker table td.today{border:1px solid #337ab7;border-radius:0}
 .datepicker table td.disabled{color:#ccc;background:0 0;cursor:text}
-.datepicker table td.selected{background:#428bca;color:#fff}
+.datepicker table td.selected{background:#337ab7;color:#fff}
 .datepicker .switch{text-align:center}
 .datepicker .invisible{opacity:0}
 .datepicker-panel{outline:0}

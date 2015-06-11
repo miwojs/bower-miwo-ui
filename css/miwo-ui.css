@@ -53,6 +53,7 @@ template {
   position: relative;
   color: #cccccc;
   outline: none;
+  transition: all 0.2s;
   -webkit-transition: all 0.2s;
   -moz-transition: all 0.2s;
   -ms-transition: all 0.2s;
@@ -60,7 +61,7 @@ template {
 }
 .checkbox .checker:focus,
 .radio .checker:focus {
-  color: #428bca;
+  color: #337ab7;
 }
 .checkbox label,
 .radio label {
@@ -78,7 +79,7 @@ template {
 }
 .checkbox.checked .checker,
 .radio.checked .checker {
-  color: #428bca;
+  color: #337ab7;
 }
 .checkbox.disabled,
 .radio.disabled {
@@ -100,6 +101,7 @@ template {
   margin-right: 10px;
 }
 .combo {
+  transition: border-color ease-in-out 0.15s;
   -webkit-transition: border-color ease-in-out 0.15s;
   -moz-transition: border-color ease-in-out 0.15s;
   -ms-transition: border-color ease-in-out 0.15s;
@@ -161,6 +163,7 @@ template {
   display: none;
 }
 .combo-dropdown {
+  transition: border-color ease-in-out 0.15s;
   -webkit-transition: border-color ease-in-out 0.15s;
   -moz-transition: border-color ease-in-out 0.15s;
   -ms-transition: border-color ease-in-out 0.15s;
@@ -191,7 +194,7 @@ template {
 }
 .combo-dropdown-item.active {
   color: #ffffff;
-  background-color: #428bca;
+  background-color: #337ab7;
 }
 .combo-dropdown-item.disabled {
   color: #eeeeee;
@@ -260,8 +263,8 @@ template {
 .slider .slider-knob.active,
 .slider .slider-knob:focus {
   outline: none;
-  background: #428bca;
-  border-color: #357ebd;
+  background: #337ab7;
+  border-color: #2e6da4;
 }
 .slider.disabled {
   opacity: 0.8;
@@ -362,8 +365,8 @@ template {
   color: #ffffff;
 }
 .toggle-primary {
-  border-color: #357ebd;
-  background: #428bca;
+  border-color: #2e6da4;
+  background: #337ab7;
   color: #ffffff;
 }
 .toggle.input-lg {
@@ -527,6 +530,99 @@ template {
 }
 .tooltip-inner {
   max-width: 250px;
+  border: 1px solid transparent;
+}
+.tooltip-info.top .tooltip-arrow {
+  border-top-color: #bce8f1;
+}
+.tooltip-info.bottom .tooltip-arrow {
+  border-bottom-color: #bce8f1;
+}
+.tooltip-info.right .tooltip-arrow {
+  border-right-color: #bce8f1;
+}
+.tooltip-info.left .tooltip-arrow {
+  border-left-color: #bce8f1;
+}
+.tooltip-info .tooltip-inner {
+  background-color: #d9edf7;
+  border-color: #bce8f1;
+  color: #31708f;
+}
+.tooltip-info .tooltip-inner hr {
+  border-top-color: #a6e1ec;
+}
+.tooltip-info .tooltip-inner .alert-link {
+  color: #245269;
+}
+.tooltip-danger.top .tooltip-arrow {
+  border-top-color: #ebccd1;
+}
+.tooltip-danger.bottom .tooltip-arrow {
+  border-bottom-color: #ebccd1;
+}
+.tooltip-danger.right .tooltip-arrow {
+  border-right-color: #ebccd1;
+}
+.tooltip-danger.left .tooltip-arrow {
+  border-left-color: #ebccd1;
+}
+.tooltip-danger .tooltip-inner {
+  background-color: #f2dede;
+  border-color: #ebccd1;
+  color: #a94442;
+}
+.tooltip-danger .tooltip-inner hr {
+  border-top-color: #e4b9c0;
+}
+.tooltip-danger .tooltip-inner .alert-link {
+  color: #843534;
+}
+.tooltip-warning.top .tooltip-arrow {
+  border-top-color: #faebcc;
+}
+.tooltip-warning.bottom .tooltip-arrow {
+  border-bottom-color: #faebcc;
+}
+.tooltip-warning.right .tooltip-arrow {
+  border-right-color: #faebcc;
+}
+.tooltip-warning.left .tooltip-arrow {
+  border-left-color: #faebcc;
+}
+.tooltip-warning .tooltip-inner {
+  background-color: #fcf8e3;
+  border-color: #faebcc;
+  color: #8a6d3b;
+}
+.tooltip-warning .tooltip-inner hr {
+  border-top-color: #f7e1b5;
+}
+.tooltip-warning .tooltip-inner .alert-link {
+  color: #66512c;
+}
+.tooltip-success.top .tooltip-arrow {
+  border-top-color: #d6e9c6;
+}
+.tooltip-success.bottom .tooltip-arrow {
+  border-bottom-color: #d6e9c6;
+}
+.tooltip-success.right .tooltip-arrow {
+  border-right-color: #d6e9c6;
+}
+.tooltip-success.left .tooltip-arrow {
+  border-left-color: #d6e9c6;
+}
+.tooltip-success .tooltip-inner {
+  background-color: #dff0d8;
+  border-color: #d6e9c6;
+  color: #3c763d;
+}
+.tooltip-success .tooltip-inner hr {
+  border-top-color: #c9e2b3;
+}
+.tooltip-success .tooltip-inner .alert-link {
+  color: #2b542c;
 }
 .popover .btn {
   margin-left: 5px;
@@ -620,7 +716,7 @@ template {
   background-color: #f5f5f5;
 }
 .grid .grid-rows tr.grid-row-data.grid-selected td {
-  background-color: #e1edf7;
+  background-color: #c7ddef;
 }
 .grid .grid-rows tr.grid-row-group td {
   border-top: none;
@@ -864,7 +960,7 @@ template {
   background: #d5d5d5;
 }
 .datepicker table td.today {
-  border: 1px solid #428bca;
+  border: 1px solid #337ab7;
   border-radius: 0;
 }
 .datepicker table td.disabled {
@@ -873,7 +969,7 @@ template {
   cursor: text;
 }
 .datepicker table td.selected {
-  background: #428bca;
+  background: #337ab7;
   color: #ffffff;
 }
 .datepicker .switch {
